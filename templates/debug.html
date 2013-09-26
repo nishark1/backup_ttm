@@ -4,7 +4,7 @@
 <script type="text/javascript" src='/static/jquery-1.10.2.min.js'></script>
 <script type="text/javascript">
 $(document).ready(function() {
-	var instance_metrics_api = "http://127.0.0.1:5000/ttm/api/v1.0/instances/54321/metrics?jsoncallback="
+	var instance_metrics_api = "http://10.10.10.105:5000/ttm/api/v1.0/instances/54321/metrics?jsoncallback="
 	$.getJSON( instance_metrics_api, {
 	    format: "json"
   	}).done(function(data) {      
@@ -13,7 +13,7 @@ $(document).ready(function() {
   			console.log(item.id)
   		})  		
     });  
-  var instance_api = 'http://127.0.0.1:5000/ttm/api/v1.0/instances/54321?jsoncallback='
+  var instance_api = 'http://10.10.10.105:5000/ttm/api/v1.0/instances/54321?jsoncallback='
 	$.getJSON( instance_api, {
 	    format: "json"
   	}).done(function(data) {      

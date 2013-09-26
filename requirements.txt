@@ -3,7 +3,7 @@ Jinja2==2.7.1
 MarkupSafe==0.18
 Werkzeug==0.9.4
 argparse==1.2.1
-gevent==0.13.8
+#gevent==0.13.8
 greenlet==0.4.1
 ipython==1.1.0
 itsdangerous==0.23

@@ -1,0 +1,29 @@
+<html>
+<head>
+<title>instance_id {{ instance_id }}</title>
+<script type="text/javascript" src='/static/jquery-1.10.2.min.js'></script>
+<script type="text/javascript">
+$(document).ready(function() {
+	var instance_metrics_api = "http://localhost:5000/ttm/api/v1.0/instances/54321/metrics"
+	$.getJSON( instance_metrics_api, {
+	    format: "json"
+  	}).done(function(data) {
+  		$.each(data.metrics, function(i, item) {
+  			$("<li>").text(item.uri).appendTo("#my_list")
+  			console.log(item.id)
+  		})  		
+  	});
+  	var instance_api = "http://localhost:5000/ttm/api/v1.0/instances/54321"
+	$.getJSON( instance_api, {
+	    format: "json"
+  	}).done(function(data) {
+  		$("#test").text(data.exists)
+  	});
+});
+</script>
+</head>
+<body>
+exists? <div id='test'></div>
+<ul id='my_list'></ul>
+</body>
+</html>

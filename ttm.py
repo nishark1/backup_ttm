@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from flask import Flask, jsonify, abort, make_response, request, url_for
 from flask import render_template
+from datetime import datetime
 import uuid
 import redis
 from tornado.wsgi import WSGIContainer
@@ -25,6 +26,13 @@ def index():
 @app.route('/ttm/debug/<string:instance_id>')
 def debug(instance_id=None):
     return render_template('debug.html', instance_id=instance_id)
+
+@app.route('/ttm/api/v1.0/time/now')
+def utc_time():
+    #convert isoformat back to datetime with dateutil
+    #example: dateutil.parser.parse('2013-09-26T19:38:14.399399')
+    date = datetime.utcnow()
+    return jsonify({"utcnow": date.isoformat()})
 
 @app.route('/ttm/api/v1.0/instances', methods = ['GET'])
 def get_instances():

@@ -49,10 +49,25 @@ def get_instances():
 
 @app.route('/ttm/api/v1.0/instances/<string:instance_id>', methods=['GET'])
 def is_instance(instance_id):
+
+    from flask import json
+    from flask import request
+    from flask import Response
     _metrics = r_server.lrange(instance_id, 0, -1)
+
     if len(_metrics) == 0:
-        return jsonify({"exists": False})    
-    return jsonify({"exists": True})
+        js = {"exists": False}
+    else:
+        js = {"exists": True}
+
+    callback = request.args.get('callback','')
+    if (callback != ''):
+        response = json.dumps(js)
+        response = callback + '(' + reponse +');'
+        return Response(reponse, mimetype="application/json")
+    else:
+        return jsonify(js);
+
 
 @app.route('/ttm/api/v1.0/instances/<string:instance_id>/metrics', methods=['GET'])
 def get_instance_metrics(instance_id):

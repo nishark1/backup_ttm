@@ -123,7 +123,7 @@ def create_metric():
     return jsonify( { 'metric': metric } ), 201
 
 if __name__ == '__main__':
-    app.run(debug = True)
+    app.run('0.0.0.0',debug = True)
     #uncomment the next 3 lines to use tornando to serve 
     #http_server = HTTPServer(WSGIContainer(app))
     #http_server.listen(5000)

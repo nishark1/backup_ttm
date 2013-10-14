@@ -63,8 +63,8 @@ def is_instance(instance_id):
     callback = request.args.get('callback','')
     if (callback != ''):
         response = json.dumps(js)
-        response = callback + '(' + reponse +');'
-        return Response(reponse, mimetype="application/json")
+        response = callback + '(' + response +');'
+        return Response(response, mimetype="application/json")
     else:
         return jsonify(js);
 

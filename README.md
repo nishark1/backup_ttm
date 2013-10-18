@@ -35,4 +35,4 @@ APIs:
  sequence diagram
  ================
  
- ![alt text](https://github.intel.com/jrcookli/ttm/raw/master/etc/ttm_seq.pdf "Sequence Diagram for TTM")
+ ![alt text](https://github.intel.com/jrcookli/ttm/raw/master/etc/ttm_seq.jpg "Sequence Diagram for TTM")

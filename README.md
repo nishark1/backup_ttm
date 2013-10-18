@@ -32,4 +32,7 @@ APIs:
   -Get time (UTC ISO Format)
       /ttm/api/v1.0/utc_time
 
+ sequence diagram
+ ================
  
+ ![alt text](https://github.intel.com/jrcookli/ttm/raw/master/etc/ttm_seq.pdf "Sequence Diagram for TTM")

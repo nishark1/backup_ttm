@@ -123,9 +123,14 @@ def create_metric():
     return jsonify( { 'metric': metric } ), 201
 
 if __name__ == '__main__':
-    app.run('0.0.0.0',debug = True, port=5001)
+    #app.run('0.0.0.0',debug = True, port=5001)
     #uncomment the next 3 lines to use tornando to serve 
-    #http_server = HTTPServer(WSGIContainer(app))
-    #http_server.listen(5000)
-    #IOLoop.instance().start()
+    http_server = HTTPServer(WSGIContainer(app)
+        , ssl_options = {
+            "certfile": '/opt/OpenCloudDashboard/ssl/sslcert.cer',
+            "keyfile": '/opt/OpenCloudDashboard/ssl/sslkey.key'
+        }
+    )
+    http_server.listen(5000)
+    IOLoop.instance().start()
 

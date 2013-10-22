@@ -7,7 +7,7 @@ import redis
 from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
-
+from flask import Response
 
 app = Flask(__name__)
 application = app
@@ -49,10 +49,34 @@ def get_instances():
 
 @app.route('/ttm/api/v1.0/instances/<string:instance_id>', methods=['GET'])
 def is_instance(instance_id):
+    from flask import Response
+    from flask import json
+    from flask import request
+
+
+    ttm_start_time = ""
+    ttm_end_time = ""
+   
+    #import pdb;pdb.set_trace()
     _metrics = r_server.lrange(instance_id, 0, -1)
+    
+    for metric in _metrics:
+           ttm_start_time = r_server.hget(metric,'start_time')
+           ttm_end_time = r_server.hget(metric,'end_time')
+            
+    #import pdb;pdb.set_trace() 
     if len(_metrics) == 0:
-        return jsonify({"exists": False})    
-    return jsonify({"exists": True})
+        js = {"exists": False,"start_time" : ttm_start_time, "end_time" : ttm_end_time}
+    else:
+        js = {"exists": True,"start_time" : ttm_start_time, "end_time" : ttm_end_time}
+
+    callback = request.args.get('callback', '')
+    if ( callback != ''):
+        response = json.dumps(js)
+    	response = callback + '(' + response + ');'
+        return Response(response, mimetype="application/json")
+    else:
+	return jsonify(js)
 
 @app.route('/ttm/api/v1.0/instances/<string:instance_id>/metrics', methods=['GET'])
 def get_instance_metrics(instance_id):
@@ -101,14 +125,14 @@ def create_metric():
                 "id": metric_id,
                 "instance_id": request.json['instance_id'],
                 "instance_name": request.json["instance_name"],
-                "start_time": request.json["start_time"],
+                "start_time":request.json["start_time"],
                 "end_time": request.json["end_time"]
             }
     r_server.hmset(metric_id, metric)
     return jsonify( { 'metric': metric } ), 201
 
 if __name__ == '__main__':
-    app.run('0.0.0.0',debug = True)
+    app.run('0.0.0.0',debug = True, port = 5001)
     #uncomment the next 3 lines to use tornando to serve 
     #http_server = HTTPServer(WSGIContainer(app))
     #http_server.listen(5000)

@@ -3,15 +3,11 @@ description "ttm server"
 start on runlevel [2345]
 stop on runlevel [!2345]
 
-chdir /opt/stack/ttm
-
 pre-start script
 mkdir -p /var/run/ttm
 chown root /var/run/ttm/
 
 mkdir -p /var/lock/ttm
 chown root /var/lock/ttm/
-chdir /opt/stack/ttm/ttm.py
 end script
-
-exec start-stop-daemon -v --start ttm --exec /opt/stack/ttm/tools/with_venv.sh -- python /opt/stack/ttm/ttm.py
+exec start-stop-daemon --start --chdir /opt/stack/ttm --exec /opt/stack/ttm/tools/with_venv.sh -- python /opt/stack/ttm/ttm.py

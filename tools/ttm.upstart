@@ -10,4 +10,5 @@ chown root /var/run/ttm/
 mkdir -p /var/lock/ttm
 chown root /var/lock/ttm/
 end script
+
 exec start-stop-daemon --start --chdir /opt/stack/ttm --exec /opt/stack/ttm/tools/with_venv.sh -- python /opt/stack/ttm/ttm.py

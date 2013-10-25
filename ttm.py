@@ -144,12 +144,12 @@ def update_metric(instance_id):
 
 if __name__ == '__main__':
     #uncomment the next 3 lines to use tornando to serve 
-#    http_server = HTTPServer(WSGIContainer(app)
-#        , ssl_options = {
-#            "certfile": '/opt/OpenCloudDashboard/ssl/sslcert.cer',
-#            "keyfile": '/opt/OpenCloudDashboard/ssl/sslkey.key'
-#        }
-#    )
-#    http_server.listen(5081)
-#    IOLoop.instance().start()
-     app.run('0.0.0.0',debug=True, port=5081)
+    http_server = HTTPServer(WSGIContainer(app)
+        , ssl_options = {
+            "certfile": '/opt/OpenCloudDashboard/ssl/sslcert.cer',
+            "keyfile": '/opt/OpenCloudDashboard/ssl/sslkey.key'
+        }
+    )
+    http_server.listen(5081)
+    IOLoop.instance().start()
+#     app.run('0.0.0.0',debug=True, port=5081)

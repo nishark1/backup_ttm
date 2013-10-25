@@ -27,11 +27,13 @@ def index():
 def debug(instance_id=None):
     return render_template('debug.html', instance_id=instance_id)
 
-@app.route('/ttm/api/v1.0/time/now')
-def utc_time():
+@app.route('/ttm/api/v1.0/instances/<string:instance_id>/time/now', methods = ["GET"])
+def utc_time(instance_id=None):
     #convert isoformat back to datetime with dateutil
     #example: dateutil.parser.parse('2013-09-26T19:38:14.399399')
     date = datetime.utcnow()
+    if (instance_id):
+        create_metric(instance_id, date.isoformat())
     return jsonify({"utcnow": date.isoformat()})
 
 @app.route('/ttm/api/v1.0/instances', methods = ['GET'])
@@ -108,37 +110,46 @@ def get_metric(metric_id):
         abort(404)    
     return jsonify( { "metric": metric } )
 
-@app.route('/ttm/api/v1.0/metrics', methods=['POST'])
-def create_metric():
-    if (not request.json 
-        or not 'instance_id' in request.json
-        or not 'instance_name' in request.json
-        or not 'start_time' in request.json
-        or not 'end_time' in request.json):
-        abort(404)
+#@app.route('/ttm/api/v1.0/instances/<string:instance_id>/metrics', methods=['POST'])
+def create_metric(instance_id, date_in_isoformat):
+    #This is called by utc_time
     metric_id = uuid.uuid4()
-    r_server.lrem('ttm_instance_ids', request.json['instance_id'], num=0)
-    r_server.lpush('ttm_instance_ids', request.json['instance_id'])
+    r_server.lpush('ttm_instance_ids', instance_id)
     r_server.lpush('ttm_metric_ids', metric_id)
-    r_server.lpush(request.json['instance_id'], metric_id)
+    r_server.lpush(instance_id, metric_id)
     metric = {                
                 "id": metric_id,
-                "instance_id": request.json['instance_id'],
-                "instance_name": request.json["instance_name"],
-                "start_time":request.json["start_time"],
-                "end_time": request.json["end_time"]
-            }
+                "instance_id": instance_id,
+                "instance_name": "",
+                "start_time": date_in_isoformat,
+                "end_time": ""
+    }
+    r_server.hmset(metric_id, metric)
+
+@app.route('/ttm/api/v1.0/instances/<string:instance_id>/metrics', methods=['POST'])
+def update_metric(instance_id):
+    if (not request.json 
+        or not 'instance_name' in request.json
+        or not 'end_time' in request.json):
+        abort(404)
+    metric_id_array = r_server.lrange(instance_id, 0, -1)
+    if (not metric_id_array):
+        abort(404)
+    metric_id = metric_id_array[0]
+    metric = r_server.hgetall(metric_id)
+    metric["instance_name"] =  request.json["instance_name"]
+    metric["end_time"] = request.json["end_time"]
     r_server.hmset(metric_id, metric)
     return jsonify( { 'metric': metric } ), 201
 
 if __name__ == '__main__':
     #uncomment the next 3 lines to use tornando to serve 
-    http_server = HTTPServer(WSGIContainer(app)
-        , ssl_options = {
-            "certfile": '/opt/OpenCloudDashboard/ssl/sslcert.cer',
-            "keyfile": '/opt/OpenCloudDashboard/ssl/sslkey.key'
-        }
-    )
-    http_server.listen(5081)
-    IOLoop.instance().start()
-
+#    http_server = HTTPServer(WSGIContainer(app)
+#        , ssl_options = {
+#            "certfile": '/opt/OpenCloudDashboard/ssl/sslcert.cer',
+#            "keyfile": '/opt/OpenCloudDashboard/ssl/sslkey.key'
+#        }
+#    )
+#    http_server.listen(5081)
+#    IOLoop.instance().start()
+     app.run('0.0.0.0',debug=True, port=5081)

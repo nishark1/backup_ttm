@@ -28,6 +28,7 @@ def debug(instance_id=None):
     return render_template('debug.html', instance_id=instance_id)
 
 @app.route('/ttm/api/v1.0/instances/<string:instance_id>/time/now', methods = ["GET"])
+@app.route('/ttm/api/v1.0/time/now', methods = ["GET"])
 def utc_time(instance_id=None):
     #convert isoformat back to datetime with dateutil
     #example: dateutil.parser.parse('2013-09-26T19:38:14.399399')

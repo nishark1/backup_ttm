@@ -4,6 +4,7 @@ from flask import render_template
 from datetime import datetime
 import uuid
 import redis
+import sys
 from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
@@ -144,13 +145,37 @@ def update_metric(instance_id):
     return jsonify( { 'metric': metric } ), 201
 
 if __name__ == '__main__':
+    #uncomment the next 3 lines to use tornando to serve
+   if (sys.argv and len(sys.argv) > 1 and sys.argv[1] == "ssl"):
+       https_server = HTTPServer(WSGIContainer(app)
+          , ssl_options = {
+               "certfile": '/opt/OpenCloudDashboard/ssl/sslcert.cer',
+               "keyfile": '/opt/OpenCloudDashboard/ssl/sslkey.key'
+           }
+       )
+       https_server.listen(5081)
+       IOLoop.instance().start()
+    #app.run('0.0.0.0',debug=True, port=5082)
+   else:
+       http_server = HTTPServer(WSGIContainer(app))
+       http_server.listen(5082)
+       IOLoop.instance().start()
+
     #uncomment the next 3 lines to use tornando to serve 
-    http_server = HTTPServer(WSGIContainer(app)
-        , ssl_options = {
-            "certfile": '/opt/OpenCloudDashboard/ssl/sslcert.cer',
-            "keyfile": '/opt/OpenCloudDashboard/ssl/sslkey.key'
-        }
-    )
-    http_server.listen(5081)
-    IOLoop.instance().start()
-#     app.run('0.0.0.0',debug=True, port=5081)
+#   https_server = HTTPServer(WSGIContainer(app)
+#       , ssl_options = {
+#           "certfile": '/opt/OpenCloudDashboard/ssl/sslcert.cer',
+#           "keyfile": '/opt/OpenCloudDashboard/ssl/sslkey.key'
+#       }
+#   )
+#    https_server.listen(5082)
+#    IOLoop.instance().start()
+#    app.run('0.0.0.0',debug=True, port=5082)
+
+
+#    http_server = HTTPServer(WSGIContainer(app){})
+#    http_server.listen(5082)
+#    IOLoop.instance().start()
+
+
+

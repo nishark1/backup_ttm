@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#for ism event publishing
+from ttm_event import TTM_Event
+import pika
 from flask import Flask, jsonify, abort, make_response, request, url_for
 from flask import render_template
 from datetime import datetime
@@ -9,6 +12,8 @@ from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 from flask import Response
+import json
+import settings
 
 app = Flask(__name__)
 application = app
@@ -34,6 +39,9 @@ def utc_time(instance_id=None):
     #convert isoformat back to datetime with dateutil
     #example: dateutil.parser.parse('2013-09-26T19:38:14.399399')
     date = datetime.utcnow()
+    if ( instance_id != None and instance_id.find('\"') != -1):
+        instance_id = instance_id.replace('\"','')
+
     if (instance_id):
         create_metric(instance_id, date.isoformat())
     return jsonify({"utcnow": date.isoformat()})
@@ -60,6 +68,9 @@ def is_instance(instance_id):
 
     ttm_start_time = ""
     ttm_end_time = ""
+
+    if ( instance_id != None and instance_id.find('\"') != -1):
+        instance_id = instance_id.replace('\"','')
    
     #import pdb;pdb.set_trace()
     _metrics = r_server.lrange(instance_id, 0, -1)
@@ -130,10 +141,15 @@ def create_metric(instance_id, date_in_isoformat):
 
 @app.route('/ttm/api/v1.0/instances/<string:instance_id>/metrics', methods=['POST'])
 def update_metric(instance_id):
+    #import pdb;pdb.set_trace()
     if (not request.json 
         or not 'instance_name' in request.json
         or not 'end_time' in request.json):
         abort(404)
+    #import pdb;pdb.set_trace()
+    if ( instance_id != None and instance_id.find('\"') != -1):
+        instance_id = instance_id.replace('\"','')
+    
     metric_id_array = r_server.lrange(instance_id, 0, -1)
     if (not metric_id_array):
         abort(404)
@@ -141,6 +157,19 @@ def update_metric(instance_id):
     metric = r_server.hgetall(metric_id)
     metric["instance_name"] =  request.json["instance_name"]
     metric["end_time"] = request.json["end_time"]
+
+#***********************************************************
+    print "entering ISM code"
+    #create ism event object
+    
+    event = TTM_Event(settings.user,settings.password,settings.host,settings.port, ssl_options=settings.ssl_options,ssl=settings.ssl)
+    print "event worked" 
+    ism_metric = {'event_type': 'compute.instance.bootstrap.end','eventType': 'Provisioning','payload': {'instance_id':metric['instance_id'] },'taskStartTime': metric['start_time'], 'taskEndTime':metric['end_time']}
+    #import ipdb;ipdb.set_trace()
+    event.send_event(json.dumps(ism_metric))
+    #end of ism event code
+#***********************************************    
+   #end of ism event code
     r_server.hmset(metric_id, metric)
     return jsonify( { 'metric': metric } ), 201
 
@@ -155,27 +184,13 @@ if __name__ == '__main__':
        )
        https_server.listen(5081)
        IOLoop.instance().start()
-    #app.run('0.0.0.0',debug=True, port=5082)
+#    app.run('0.0.0.0',debug=True, port=5082)
    else:
        http_server = HTTPServer(WSGIContainer(app))
        http_server.listen(5082)
        IOLoop.instance().start()
 
     #uncomment the next 3 lines to use tornando to serve 
-#   https_server = HTTPServer(WSGIContainer(app)
-#       , ssl_options = {
-#           "certfile": '/opt/OpenCloudDashboard/ssl/sslcert.cer',
-#           "keyfile": '/opt/OpenCloudDashboard/ssl/sslkey.key'
-#       }
-#   )
-#    https_server.listen(5082)
-#    IOLoop.instance().start()
-#    app.run('0.0.0.0',debug=True, port=5082)
-
-
-#    http_server = HTTPServer(WSGIContainer(app){})
-#    http_server.listen(5082)
-#    IOLoop.instance().start()
 
 
 

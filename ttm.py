@@ -69,6 +69,7 @@ def is_instance(instance_id):
 
     ttm_start_time = ""
     ttm_end_time = ""
+    ttm_instance_start_time = ""
 
     if ( instance_id != None and instance_id.find('\"') != -1):
         instance_id = instance_id.replace('\"','')
@@ -82,12 +83,13 @@ def is_instance(instance_id):
     for metric in _metrics:
            ttm_start_time = r_server.hget(metric,'start_time')
            ttm_end_time = r_server.hget(metric,'end_time')
+           ttm_instance_start_time =  r_server.hget(metric,'instance_start_time')
             
     #import pdb;pdb.set_trace() 
     if len(_metrics) == 0:
-        js = {"exists": False,"start_time" : ttm_start_time, "end_time" : ttm_end_time}
+        js = {"exists": False,"start_time" : ttm_start_time, "end_time" : ttm_end_time, "instance_start_time" : ttm_instance_start_time}
     else:
-        js = {"exists": True,"start_time" : ttm_start_time, "end_time" : ttm_end_time}
+        js = {"exists": True,"start_time" : ttm_start_time, "end_time" : ttm_end_time, "instance_start_time" : ttm_instance_start_time}
 
     callback = request.args.get('callback', '')
     if ( callback != ''):

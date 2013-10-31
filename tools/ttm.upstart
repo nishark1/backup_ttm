@@ -12,3 +12,6 @@ chown ttm:root /var/lock/ttm/
 end script
 
 exec start-stop-daemon --start --chuid ttm --chdir /opt/stack/ttm --exec /opt/stack/ttm/tools/with_venv.sh -- python /opt/stack/ttm/ttm.py
+
+exec start-stop-daemon --start --chuid ttm --chdir /opt/stack/ttm --exec /opt/stack/ttm/tools/with_venv.sh -- python "/opt/stack/ttm/ttm.py ssl"
+

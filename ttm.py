@@ -130,18 +130,33 @@ def get_metric(metric_id):
 #@app.route('/ttm/api/v1.0/instances/<string:instance_id>/metrics', methods=['POST'])
 def create_metric(instance_id, date_in_isoformat):
     #This is called by utc_time
-    metric_id = uuid.uuid4()
-    r_server.lpush('ttm_instance_ids', instance_id)
-    r_server.lpush('ttm_metric_ids', metric_id)
-    r_server.lpush(instance_id, metric_id)
-    metric = {                
+    metric = {} 
+    metric_id_array = r_server.lrange(instance_id, 0, -1)
+    if (metric_id_array):
+            metric_id = metric_id_array[0]
+            metric = r_server.hgetall(metric_id)
+
+    if (metric):
+        pass
+    else:
+
+        #This is called by utc_time
+        metric_id = uuid.uuid4()
+        r_server.lpush('ttm_instance_ids', instance_id)
+        r_server.lpush('ttm_metric_ids', metric_id)
+        r_server.lpush(instance_id, metric_id)
+        metric = {                
                 "id": metric_id,
                 "instance_id": instance_id,
                 "instance_name": "",
                 "start_time": date_in_isoformat,
-                "end_time": ""
-    }
+                "end_time": "",
+                "instance_start_time": date_in_isoformat
+        }
     r_server.hmset(metric_id, metric)
+
+
+
 
 @app.route('/ttm/api/v1.0/instances/<string:instance_id>/metrics', methods=['POST'])
 def update_metric(instance_id):
@@ -163,7 +178,6 @@ def update_metric(instance_id):
     metric["instance_name"] =  request.json["instance_name"]
     metric["end_time"] = request.json["end_time"]
 
-#***********************************************************
     print "entering ISM code"
     #create ism event object
     
@@ -173,8 +187,9 @@ def update_metric(instance_id):
     #import ipdb;ipdb.set_trace()
     event.send_event(json.dumps(ism_metric))
     #end of ism event code
-#***********************************************    
-   #end of ism event code
+    
+    print "ISM code End"
+
     r_server.hmset(metric_id, metric)
     return jsonify( { 'metric': metric } ), 201
 

@@ -39,6 +39,7 @@ def utc_time(instance_id=None):
     #convert isoformat back to datetime with dateutil
     #example: dateutil.parser.parse('2013-09-26T19:38:14.399399')
     date = datetime.utcnow()
+    
     if ( instance_id != None and instance_id.find('\"') != -1):
         instance_id = instance_id.replace('\"','')
 
@@ -73,6 +74,9 @@ def is_instance(instance_id):
         instance_id = instance_id.replace('\"','')
    
     #import pdb;pdb.set_trace()
+    if ( instance_id != None and instance_id.find('\"') != -1):
+        instance_id = instance_id.replace('\"','')
+
     _metrics = r_server.lrange(instance_id, 0, -1)
     
     for metric in _metrics:
@@ -146,13 +150,14 @@ def update_metric(instance_id):
         or not 'instance_name' in request.json
         or not 'end_time' in request.json):
         abort(404)
-    #import pdb;pdb.set_trace()
+    
     if ( instance_id != None and instance_id.find('\"') != -1):
         instance_id = instance_id.replace('\"','')
-    
+
     metric_id_array = r_server.lrange(instance_id, 0, -1)
     if (not metric_id_array):
         abort(404)
+
     metric_id = metric_id_array[0]
     metric = r_server.hgetall(metric_id)
     metric["instance_name"] =  request.json["instance_name"]

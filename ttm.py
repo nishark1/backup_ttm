@@ -227,7 +227,7 @@ def update_metric(instance_id):
     print "entering ISM code"
     #create ism event object
     
-    event = TTM_Event(settings.user,settings.password,settings.host,settings.port, ssl_options=settings.ssl_options,ssl=settings.ssl)
+    event = TTM_Event(settings.mq_user,settings.mq_password,settings.mq_host,settings.mq_port, ssl_options=settings.mq_ssl_options,ssl=settings.mq_ssl)
     print "event worked" 
     ism_metric = {'event_type': 'compute.instance.bootstrap.end','eventType': 'Provisioning','payload': {'instance_id':metric['instance_id'] },'taskStartTime': metric['start_time'], 'taskEndTime':metric['end_time']}
     #import ipdb;ipdb.set_trace()

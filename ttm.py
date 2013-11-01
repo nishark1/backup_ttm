@@ -16,10 +16,11 @@ import json
 import settings
 import logging
 from logging.handlers import RotatingFileHandler
+from OpenSSL import SSL
 
 app = Flask(__name__)
 application = app
-r_server = redis.Redis("localhost")
+r_server = redis.Redis(settings.rabbit_host)
 
 
 @app.errorhandler(404)
@@ -248,15 +249,19 @@ if __name__ == '__main__':
 
     #uncomment the next 3 lines to use tornando to serve
     if (sys.argv and len(sys.argv) > 1 and sys.argv[1] == "ssl"):
-       https_server = HTTPServer(WSGIContainer(app)
-          , ssl_options = {
-               "certfile": '/opt/OpenCloudDashboard/ssl/sslcert.cer',
-               "keyfile": '/opt/OpenCloudDashboard/ssl/sslkey.key'
-           }
-       )
-       https_server.listen(5081)
-       IOLoop.instance().start()
-#    app.run('0.0.0.0',debug=True, port=5082)
+    #   https_server = HTTPServer(WSGIContainer(app)
+    #      , ssl_options = {
+    #           "certfile": '/opt/OpenCloudDashboard/ssl/sslcert.cer',
+    #           "keyfile": '/opt/OpenCloudDashboard/ssl/sslkey.key'
+    #       }
+    #   )
+    #   https_server.listen(5081)
+    #   IOLoop.instance().start()
+        context = SSL.Context(SSL.SSLv23_METHOD)
+        context.use_privatekey_file('/opt/OpenCloudDashboard/ssl/sslkey.key')
+        context.use_certificate_file('/opt/OpenCloudDashboard/ssl/sslcert.cer')
+        app.run(host=settings.listen_ip, port=5081, debug=True, ssl_context=context)
+    
     else:
        http_server = HTTPServer(WSGIContainer(app))
        http_server.listen(5082)

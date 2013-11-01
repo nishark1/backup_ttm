@@ -82,23 +82,24 @@ def get_instances_build_status():
            ttm_end_time = r_server.hget(metric,'end_time')
           
            ttm_instance_start_time =  r_server.hget(metric,'instance_start_time')
-           str_ttm_instance_start_time = ttm_instance_start_time.split('.')
-	   dt_ttm_instance_start_time = datetime.strptime(str_ttm_instance_start_time[0],"%Y-%m-%dT%H:%M:%S")
+           if (ttm_instance_start_time):
+               str_ttm_instance_start_time = ttm_instance_start_time.split('.')
+	       dt_ttm_instance_start_time = datetime.strptime(str_ttm_instance_start_time[0],"%Y-%m-%dT%H:%M:%S")
       
-           ttm_instance_name = r_server.hget(metric,'instance_name')  
-           build_time = datetime.utcnow() - dt_ttm_instance_start_time
-           postbuild_time = datetime.utcnow() - dt_ttm_start_time
+               ttm_instance_name = r_server.hget(metric,'instance_name')  
+               build_time = datetime.utcnow() - dt_ttm_instance_start_time
+               postbuild_time = datetime.utcnow() - dt_ttm_start_time
 
        if(((len(ttm_start_time) > 0) or (len(ttm_instance_start_tim) > 0) )and (len(ttm_end_time) <= 0) ):
            instances.append(
               {
                 "instance_id": x
                ,"instance_name":ttm_instance_name
-               ,"build_start_time":ttm_instance_start_time
-               ,"postbuild_start_time":ttm_start_time
-               ,"build_end_time":ttm_end_time
-               ,"build_time":build_time
-               ,"postbuild_time":postbuild_time
+               ,"build_start_time":ttm_instance_start_time.__str__()
+               ,"postbuild_start_time":ttm_start_time.__str__()
+               ,"build_end_time":ttm_end_time.__str__()
+               ,"build_time":build_time.__str__()
+               ,"postbuild_time":postbuild_time.__str__()
               } 
            )
     return jsonify( { "instances": instances } )
@@ -241,7 +242,7 @@ def update_metric(instance_id):
 
 if __name__ == '__main__':
 
-    handler = RotatingFileHandler('\var\log\ttm.log', maxBytes=100000, backupCount=1)
+    handler = RotatingFileHandler('/var/log/ttm/_ttm.log', maxBytes=100000, backupCount=1)
     handler.setLevel(logging.INFO)
     app.logger.addHandler(handler)
 

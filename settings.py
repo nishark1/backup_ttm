@@ -5,4 +5,4 @@ mq_port=5671
 mq_ssl_options={'ca_certs': '/opt/OpenCloudDashboard/ssl/cacert.pem', 'cert_reqs': 2}
 mq_ssl=True
 listen_ip="10.11.8.23"
-rabbit_host="localhost"
+redis_host="localhost"

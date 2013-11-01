@@ -20,7 +20,7 @@ from OpenSSL import SSL
 
 app = Flask(__name__)
 application = app
-r_server = redis.Redis(settings.rabbit_host)
+r_server = redis.Redis(settings.redis_host)
 
 
 @app.errorhandler(404)

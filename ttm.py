@@ -14,6 +14,8 @@ from tornado.ioloop import IOLoop
 from flask import Response
 import json
 import settings
+import logging
+from logging.handlers import RotatingFileHandler
 
 app = Flask(__name__)
 application = app
@@ -26,6 +28,9 @@ def not_found(error):
 
 @app.route('/')
 def index():
+    app.logger.warning('A warning occurred (%d apples)', 42)
+    app.logger.error('An error occurred')
+    app.logger.info('Info')
     return "These are not the droids you are looking for."
 
 @app.route('/ttm/debug')
@@ -59,6 +64,45 @@ def get_instances():
             } 
         )
     return jsonify( { "instances": instances } )
+
+@app.route('/ttm/api/v1.0/buildstatus', methods = ['GET'])
+def get_instances_build_status():
+    from datetime import datetime
+
+    _instances = r_server.lrange('ttm_instance_ids', 0, -1)    
+    instances = []
+    for x in _instances:
+       _metrics = r_server.lrange(x, 0, -1)
+       #date = datetime.utcnow()
+       for metric in _metrics:
+           ttm_start_time = r_server.hget(metric,'start_time')
+	   str_ttm_start_time = ttm_start_time.split('.')
+           dt_ttm_start_time = datetime.strptime(str_ttm_start_time[0],"%Y-%m-%dT%H:%M:%S")
+	   
+           ttm_end_time = r_server.hget(metric,'end_time')
+          
+           ttm_instance_start_time =  r_server.hget(metric,'instance_start_time')
+           str_ttm_instance_start_time = ttm_instance_start_time.split('.')
+	   dt_ttm_instance_start_time = datetime.strptime(str_ttm_instance_start_time[0],"%Y-%m-%dT%H:%M:%S")
+      
+           ttm_instance_name = r_server.hget(metric,'instance_name')  
+           build_time = datetime.utcnow() - dt_ttm_instance_start_time
+           postbuild_time = datetime.utcnow() - dt_ttm_start_time
+
+       if(((len(ttm_start_time) > 0) or (len(ttm_instance_start_tim) > 0) )and (len(ttm_end_time) <= 0) ):
+           instances.append(
+              {
+                "instance_id": x
+               ,"instance_name":ttm_instance_name
+               ,"build_start_time":ttm_instance_start_time
+               ,"postbuild_start_time":ttm_start_time
+               ,"build_end_time":ttm_end_time
+               ,"build_time":build_time
+               ,"postbuild_time":postbuild_time
+              } 
+           )
+    return jsonify( { "instances": instances } )
+
 
 @app.route('/ttm/api/v1.0/instances/<string:instance_id>', methods=['GET'])
 def is_instance(instance_id):
@@ -196,8 +240,13 @@ def update_metric(instance_id):
     return jsonify( { 'metric': metric } ), 201
 
 if __name__ == '__main__':
+
+    handler = RotatingFileHandler('\var\log\ttm.log', maxBytes=100000, backupCount=1)
+    handler.setLevel(logging.INFO)
+    app.logger.addHandler(handler)
+
     #uncomment the next 3 lines to use tornando to serve
-   if (sys.argv and len(sys.argv) > 1 and sys.argv[1] == "ssl"):
+    if (sys.argv and len(sys.argv) > 1 and sys.argv[1] == "ssl"):
        https_server = HTTPServer(WSGIContainer(app)
           , ssl_options = {
                "certfile": '/opt/OpenCloudDashboard/ssl/sslcert.cer',
@@ -207,7 +256,7 @@ if __name__ == '__main__':
        https_server.listen(5081)
        IOLoop.instance().start()
 #    app.run('0.0.0.0',debug=True, port=5082)
-   else:
+    else:
        http_server = HTTPServer(WSGIContainer(app))
        http_server.listen(5082)
        IOLoop.instance().start()

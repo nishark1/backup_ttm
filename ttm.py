@@ -66,7 +66,7 @@ def get_instances():
         )
     return jsonify( { "instances": instances } )
 
-@app.route('/ttm/api/v1.0/buildstatus', methods = ['GET'])
+@app.route('/ttm/api/v1.0/incompletebuild', methods = ['GET'])
 def get_instances_build_status():
     from datetime import datetime
 
@@ -95,10 +95,8 @@ def get_instances_build_status():
            instances.append(
               {
                 "instance_id": x
-               ,"instance_name":ttm_instance_name
                ,"build_start_time":ttm_instance_start_time.__str__()
                ,"postbuild_start_time":ttm_start_time.__str__()
-               ,"build_end_time":ttm_end_time.__str__()
                ,"build_time":build_time.__str__()
                ,"postbuild_time":postbuild_time.__str__()
               } 

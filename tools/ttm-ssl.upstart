@@ -1,0 +1,17 @@
+description "ttm server"
+
+start on runlevel [2345]
+stop on runlevel [!2345]
+
+pre-start script
+mkdir -p /var/log/ttm
+chown ttm:root /var/log/ttm/
+mkdir -p /var/run/ttm
+chown ttm:root /var/run/ttm/
+
+mkdir -p /var/lock/ttm
+chown ttm:root /var/lock/ttm/
+end script
+
+exec start-stop-daemon --start --chuid ttm --chdir /opt/stack/ttm -m --pidfile /var/run/ttm-ssl.pid --name ttm-ssl --exec /opt/stack/ttm/tools/with_venv.sh -- python "/opt/stack/ttm/ttm.py ssl" > /var/log/ttm/ttm-ssl.log 2>&1
+

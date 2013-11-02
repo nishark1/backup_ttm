@@ -224,17 +224,21 @@ def update_metric(instance_id):
     metric["instance_name"] =  request.json["instance_name"]
     metric["end_time"] = request.json["end_time"]
 
-    print "entering ISM code"
-    #create ism event object
+    try:
+        print "entering ISM code"
+        #create ism event object
     
-    event = TTM_Event(settings.mq_user,settings.mq_password,settings.mq_host,settings.mq_port, ssl_options=settings.mq_ssl_options,ssl=settings.mq_ssl)
-    print "event worked" 
-    ism_metric = {'event_type': 'compute.instance.bootstrap.end','eventType': 'Provisioning','payload': {'instance_id':metric['instance_id'] },'taskStartTime': metric['start_time'], 'taskEndTime':metric['end_time']}
-    #import ipdb;ipdb.set_trace()
-    event.send_event(json.dumps(ism_metric))
-    #end of ism event code
+        event = TTM_Event(settings.mq_user,settings.mq_password,settings.mq_host,settings.mq_port, ssl_options=settings.mq_ssl_options,ssl=settings.mq_ssl)
+        print "event worked" 
+        ism_metric = {'event_type': 'compute.instance.bootstrap.end','eventType': 'Provisioning','payload': {'instance_id':metric['instance_id'] },'taskStartTime': metric['start_time'], 'taskEndTime':metric['end_time']}
+        #import ipdb;ipdb.set_trace()
+        event.send_event(json.dumps(ism_metric))
+        #end of ism event code
     
-    print "ISM code End"
+        print "ISM code End"
+    except Exception as e:
+        app.logger.error(e)
+
 
     r_server.hmset(metric_id, metric)
     return jsonify( { 'metric': metric } ), 201

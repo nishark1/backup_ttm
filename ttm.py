@@ -266,7 +266,7 @@ if __name__ == '__main__':
     
     else:
        http_server = HTTPServer(WSGIContainer(app))
-       http_server.listen(5082)
+       http_server.listen(5082, address=settings.listen_ip)
        IOLoop.instance().start()
 
     #uncomment the next 3 lines to use tornando to serve 

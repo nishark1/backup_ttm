@@ -22,7 +22,6 @@ app = Flask(__name__)
 application = app
 r_server = redis.Redis(settings.redis_host)
 
-
 @app.errorhandler(404)
 def not_found(error):
     return make_response(jsonify( { 'error': 'Not found' } ), 404)
@@ -62,7 +61,7 @@ def get_instances():
             {
                 "instance_id": x
                 ,"uri": url_for('get_instance_metrics', instance_id=x, _external=True) 
-            } 
+            }
         )
     return jsonify( { "instances": instances } )
 
@@ -77,30 +76,30 @@ def get_instances_build_status():
        #date = datetime.utcnow()
        for metric in _metrics:
            ttm_start_time = r_server.hget(metric,'start_time')
-	   str_ttm_start_time = ttm_start_time.split('.')
+           str_ttm_start_time = ttm_start_time.split('.')
            dt_ttm_start_time = datetime.strptime(str_ttm_start_time[0],"%Y-%m-%dT%H:%M:%S")
-	   
+           postbuild_time = datetime.utcnow() - dt_ttm_start_time
+
            ttm_end_time = r_server.hget(metric,'end_time')
-          
+
            ttm_instance_start_time =  r_server.hget(metric,'instance_start_time')
            if (ttm_instance_start_time):
                str_ttm_instance_start_time = ttm_instance_start_time.split('.')
-	       dt_ttm_instance_start_time = datetime.strptime(str_ttm_instance_start_time[0],"%Y-%m-%dT%H:%M:%S")
-      
-               ttm_instance_name = r_server.hget(metric,'instance_name')  
+               dt_ttm_instance_start_time = datetime.strptime(str_ttm_instance_start_time[0],"%Y-%m-%dT%H:%M:%S")
+               ttm_instance_name = r_server.hget(metric,'instance_name')
                build_time = datetime.utcnow() - dt_ttm_instance_start_time
-               postbuild_time = datetime.utcnow() - dt_ttm_start_time
 
-       if(((len(ttm_start_time) > 0) or (len(ttm_instance_start_time) > 0) )and (len(ttm_end_time) <= 0) ):
-           instances.append(
-              {
-                "instance_id": x
-               ,"build_start_time":ttm_instance_start_time.__str__()
-               ,"postbuild_start_time":ttm_start_time.__str__()
-               ,"build_time":build_time.__str__()
-               ,"postbuild_time":postbuild_time.__str__()
-              } 
-           )
+           if(((len(ttm_start_time) > 0) or (len(ttm_instance_start_time) > 0) )and (len(ttm_end_time) <= 0) ):
+               instances.append(
+                       {
+                           "instance_id": x
+                           ,"build_start_time":ttm_instance_start_time.__str__()
+                           ,"postbuild_start_time":ttm_start_time.__str__()
+                           ,"build_time":build_time.__str__()
+                           ,"postbuild_time":postbuild_time.__str__()
+                       }
+               )
+
     return jsonify( { "instances": instances } )
 
 
@@ -117,18 +116,18 @@ def is_instance(instance_id):
 
     if ( instance_id != None and instance_id.find('\"') != -1):
         instance_id = instance_id.replace('\"','')
-   
+
     #import pdb;pdb.set_trace()
     if ( instance_id != None and instance_id.find('\"') != -1):
         instance_id = instance_id.replace('\"','')
 
     _metrics = r_server.lrange(instance_id, 0, -1)
-    
+
     for metric in _metrics:
            ttm_start_time = r_server.hget(metric,'start_time')
            ttm_end_time = r_server.hget(metric,'end_time')
            ttm_instance_start_time =  r_server.hget(metric,'instance_start_time')
-            
+
     #import pdb;pdb.set_trace() 
     if len(_metrics) == 0:
         js = {"exists": False,"start_time" : ttm_start_time, "end_time" : ttm_end_time, "instance_start_time" : ttm_instance_start_time}
@@ -191,27 +190,100 @@ def create_metric(instance_id, date_in_isoformat):
         r_server.lpush('ttm_instance_ids', instance_id)
         r_server.lpush('ttm_metric_ids', metric_id)
         r_server.lpush(instance_id, metric_id)
-        metric = {                
+        metric = {
                 "id": metric_id,
                 "instance_id": instance_id,
                 "instance_name": "",
                 "start_time": date_in_isoformat,
                 "end_time": "",
-                "instance_start_time": date_in_isoformat
+                "instance_start_time": date_in_isoformat,
+                "bootstrap_timeout":False
         }
     r_server.hmset(metric_id, metric)
 
 
+@app.route('/ttm/api/v1.0/instances/timeout', methods=['GET'])
+def check_timeout_vm():
+    _instances = r_server.lrange('ttm_instance_ids', 0, -1)
+    instances = []
+    hours = 0
+    minutes = 0
+    bhours = 0
+    
+    for x in _instances:
+        try:
+            _metrics = r_server.lrange(x, 0, -1)
+            for metric in _metrics:
+                ttm_start_time = r_server.hget(metric,'start_time')
+                if(ttm_start_time):
+                    str_ttm_start_time = ttm_start_time.split('.')
+                    dt_ttm_start_time = datetime.strptime(str_ttm_start_time[0],"%Y-%m-%dT%H:%M:%S")
+                    postbuild_time = datetime.utcnow() - dt_ttm_start_time
+                    hours = (postbuild_time.days*24)-(postbuild_time.seconds/3600)
+                    print '{} hours'.format(hours)
 
+                ttm_instance_start_time =  r_server.hget(metric,'instance_start_time')
+                if (ttm_instance_start_time):
+                    str_ttm_instance_start_time = ttm_instance_start_time.split('.')
+                    dt_ttm_instance_start_time = datetime.strptime(str_ttm_instance_start_time[0],"%Y-%m-%dT%H:%M:%S")
+                    build_time = datetime.utcnow() - dt_ttm_instance_start_time
+                    bhours = (build_time.days*24)-(build_time.seconds/3600)
+                    print '{} hours'.format(hours)
+
+                ttm_end_time = r_server.hget(metric,'end_time')
+                instance_name = r_server.hget(metric,'instance_name')
+                if(((hours > 3) and (ttm_end_time == ""))
+                            or ((bhours > 3) and (ttm_end_time == ""))):
+                    update_metric_timeout(x, instance_name)
+                    instances.append(
+                        {
+                            "instance_id": x
+                            ,"instance_name":instance_name
+                            ,"start_time":ttm_start_time
+                            ,"instance_start_time":ttm_instance_start_time
+                            ,"end_time":ttm_end_time
+                            ,"bootstrap_timeout":True
+                        }
+                    )
+        except:
+            print 'Exception ocured: Possibly invalid datetime format'
+
+    return jsonify( { "instances": instances } )
+
+def update_metric_timeout(instance_id, instance_name):
+    if ( instance_id != None and instance_id.find('\"') != -1):
+        instance_id = instance_id.replace('\"','')
+
+    metric_id_array = r_server.lrange(instance_id, 0, -1)
+    if (not metric_id_array):
+        abort(404)
+
+    metric_id = metric_id_array[0]
+    metric = r_server.hgetall(metric_id)
+    metric["instance_name"] =  instance_name
+    metric["end_time"] = "2013-11-04T17:99:99.999999"
+    metric["bootstrap_timeout"] ="True"
+
+
+    if (not settings.debug):
+        print "entering ISM code"
+        event = TTM_Event(settings.mq_user,settings.mq_password,settings.mq_host,settings.mq_port, ssl_options=settings.mq_ssl_options,ssl=settings.mq_ssl)
+        print "event worked"
+        ism_metric = {'event_type': 'compute.instance.bootstrap.end','eventType': 'Provisioning','payload': {'instance_id':metric['instance_id'] },'taskStartTime': metric['start_time'], 'taskEndTime':metric['end_time']}
+        print "sending event"
+        event.send_event(json.dumps(ism_metric))
+        print "ISM code End"
+
+    r_server.hmset(metric_id, metric)
+    return jsonify( { 'metric': metric } ), 201
 
 @app.route('/ttm/api/v1.0/instances/<string:instance_id>/metrics', methods=['POST'])
 def update_metric(instance_id):
-    #import pdb;pdb.set_trace()
     if (not request.json 
         or not 'instance_name' in request.json
         or not 'end_time' in request.json):
         abort(404)
-    
+
     if ( instance_id != None and instance_id.find('\"') != -1):
         instance_id = instance_id.replace('\"','')
 
@@ -224,21 +296,14 @@ def update_metric(instance_id):
     metric["instance_name"] =  request.json["instance_name"]
     metric["end_time"] = request.json["end_time"]
 
-    try:
+    if (not settings.debug):
         print "entering ISM code"
-        #create ism event object
-    
         event = TTM_Event(settings.mq_user,settings.mq_password,settings.mq_host,settings.mq_port, ssl_options=settings.mq_ssl_options,ssl=settings.mq_ssl)
         print "event worked" 
         ism_metric = {'event_type': 'compute.instance.bootstrap.end','eventType': 'Provisioning','payload': {'instance_id':metric['instance_id'] },'taskStartTime': metric['start_time'], 'taskEndTime':metric['end_time']}
-        #import ipdb;ipdb.set_trace()
+        print "Sending event to ISM"
         event.send_event(json.dumps(ism_metric))
-        #end of ism event code
-    
         print "ISM code End"
-    except Exception as e:
-        app.logger.error(e)
-
 
     r_server.hmset(metric_id, metric)
     return jsonify( { 'metric': metric } ), 201
@@ -263,7 +328,7 @@ if __name__ == '__main__':
         context.use_privatekey_file('/opt/OpenCloudDashboard/ssl/sslkey.key')
         context.use_certificate_file('/opt/OpenCloudDashboard/ssl/sslcert.cer')
         app.run(host=settings.listen_ip, port=5081, debug=True, ssl_context=context)
-    
+
     else:
        http_server = HTTPServer(WSGIContainer(app))
        http_server.listen(5082, address=settings.listen_ip)

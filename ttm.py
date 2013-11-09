@@ -231,17 +231,18 @@ def check_timeout_vm():
                     print '{} hours'.format(hours)
 
                 ttm_end_time = r_server.hget(metric,'end_time')
+                date = datetime.utcnow()
                 instance_name = r_server.hget(metric,'instance_name')
                 if(((hours > 3) and (ttm_end_time == ""))
                             or ((bhours > 3) and (ttm_end_time == ""))):
-                    update_metric_timeout(x, instance_name)
+                    update_metric_timeout(x, instance_name,date)
                     instances.append(
                         {
                             "instance_id": x
                             ,"instance_name":instance_name
                             ,"start_time":ttm_start_time
                             ,"instance_start_time":ttm_instance_start_time
-                            ,"end_time":ttm_end_time
+                            ,"end_time":date.isoformat()
                             ,"bootstrap_timeout":True
                         }
                     )
@@ -250,7 +251,7 @@ def check_timeout_vm():
 
     return jsonify( { "instances": instances } )
 
-def update_metric_timeout(instance_id, instance_name):
+def update_metric_timeout(instance_id, instance_name,date):
     if ( instance_id != None and instance_id.find('\"') != -1):
         instance_id = instance_id.replace('\"','')
 
@@ -261,7 +262,7 @@ def update_metric_timeout(instance_id, instance_name):
     metric_id = metric_id_array[0]
     metric = r_server.hgetall(metric_id)
     metric["instance_name"] =  instance_name
-    metric["end_time"] = "2013-11-04T17:99:99.999999"
+    metric["end_time"] = date.isoformat()
     metric["bootstrap_timeout"] ="True"
 
 

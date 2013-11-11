@@ -70,8 +70,11 @@ def get_instances_build_status():
     _instances = r_server.lrange('ttm_instance_ids', 0, -1)
     instances = []
     instanceCount = 0
+    vmfailedCount = 0
+    date = datetime.utcnow()
     for x in _instances:
         try:
+            instanceCount = instanceCount + 1
             _metrics = r_server.lrange(x, 0, -1)
             for metric in _metrics:
                 ttm_start_time = r_server.hget(metric,'start_time')
@@ -90,6 +93,7 @@ def get_instances_build_status():
                         build_time = datetime.utcnow() - dt_ttm_instance_start_time
 
                 if(((len(ttm_start_time) > 0) or (len(ttm_instance_start_time) > 0) )and (len(ttm_end_time) <= 0) ):
+                    vmfailedCount = vmfailedCount + 1
                     instances.append(
                        {
                            "instance_id": x
@@ -102,7 +106,7 @@ def get_instances_build_status():
         except:
             print 'Exception ocured: Possibly invalid datetime format'
 
-    return jsonify( { "instances": instances } )
+    return jsonify( { "instances": instances , "Total_Instances":instanceCount ,"VMinPostBuildState":vmfailedCount, "CurrentTime":date.isoformat() } )
 
 
 @app.route('/ttm/api/v1.0/instances/<string:instance_id>', methods=['GET'])
@@ -211,7 +215,7 @@ def check_timeout_vm():
     hours = 0
     minutes = 0
     bhours = 0
-    
+
     for x in _instances:
         try:
             _metrics = r_server.lrange(x, 0, -1)

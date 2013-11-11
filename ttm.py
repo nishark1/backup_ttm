@@ -67,30 +67,30 @@ def get_instances():
 
 @app.route('/ttm/api/v1.0/incompletebuilds', methods = ['GET'])
 def get_instances_build_status():
-    from datetime import datetime
-
-    _instances = r_server.lrange('ttm_instance_ids', 0, -1)    
+    _instances = r_server.lrange('ttm_instance_ids', 0, -1)
     instances = []
+    instanceCount = 0
     for x in _instances:
-       _metrics = r_server.lrange(x, 0, -1)
-       #date = datetime.utcnow()
-       for metric in _metrics:
-           ttm_start_time = r_server.hget(metric,'start_time')
-           str_ttm_start_time = ttm_start_time.split('.')
-           dt_ttm_start_time = datetime.strptime(str_ttm_start_time[0],"%Y-%m-%dT%H:%M:%S")
-           postbuild_time = datetime.utcnow() - dt_ttm_start_time
+        try:
+            _metrics = r_server.lrange(x, 0, -1)
+            for metric in _metrics:
+                ttm_start_time = r_server.hget(metric,'start_time')
+                if(ttm_start_time):
+                    str_ttm_start_time = ttm_start_time.split('.')
+                    dt_ttm_start_time = datetime.strptime(str_ttm_start_time[0],"%Y-%m-%dT%H:%M:%S")
+                    postbuild_time = datetime.utcnow() - dt_ttm_start_time
 
-           ttm_end_time = r_server.hget(metric,'end_time')
+                    ttm_end_time = r_server.hget(metric,'end_time')
 
-           ttm_instance_start_time =  r_server.hget(metric,'instance_start_time')
-           if (ttm_instance_start_time):
-               str_ttm_instance_start_time = ttm_instance_start_time.split('.')
-               dt_ttm_instance_start_time = datetime.strptime(str_ttm_instance_start_time[0],"%Y-%m-%dT%H:%M:%S")
-               ttm_instance_name = r_server.hget(metric,'instance_name')
-               build_time = datetime.utcnow() - dt_ttm_instance_start_time
+                ttm_instance_start_time =  r_server.hget(metric,'instance_start_time')
+                if (ttm_instance_start_time):
+                        str_ttm_instance_start_time = ttm_instance_start_time.split('.')
+                        dt_ttm_instance_start_time = datetime.strptime(str_ttm_instance_start_time[0],"%Y-%m-%dT%H:%M:%S")
+                        ttm_instance_name = r_server.hget(metric,'instance_name')
+                        build_time = datetime.utcnow() - dt_ttm_instance_start_time
 
-           if(((len(ttm_start_time) > 0) or (len(ttm_instance_start_time) > 0) )and (len(ttm_end_time) <= 0) ):
-               instances.append(
+                if(((len(ttm_start_time) > 0) or (len(ttm_instance_start_time) > 0) )and (len(ttm_end_time) <= 0) ):
+                    instances.append(
                        {
                            "instance_id": x
                            ,"build_start_time":ttm_instance_start_time.__str__()
@@ -98,7 +98,9 @@ def get_instances_build_status():
                            ,"build_time":build_time.__str__()
                            ,"postbuild_time":postbuild_time.__str__()
                        }
-               )
+                    )
+        except:
+            print 'Exception ocured: Possibly invalid datetime format'
 
     return jsonify( { "instances": instances } )
 

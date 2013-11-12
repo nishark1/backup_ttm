@@ -3,16 +3,16 @@ echo "Running TTM Test Cases"
 
 curl http://localhost:5082/ttm/api/v1.0/time/now
 
-http://localhost:5082/ttm/api/v1.0/instances/111201/time/now
-http://localhost:5082/ttm/api/v1.0/instances/111202/time/now
-http://localhost:5082/ttm/api/v1.0/instances/111203/time/now
-http://localhost:5082/ttm/api/v1.0/instances/111204/time/now
-http://localhost:5082/ttm/api/v1.0/instances/111205/time/now
-http://localhost:5082/ttm/api/v1.0/instances/111206/time/now
-http://localhost:5082/ttm/api/v1.0/instances/111207/time/now
-http://localhost:5082/ttm/api/v1.0/instances/111208/time/now
-http://localhost:5082/ttm/api/v1.0/instances/111209/time/now
-http://localhost:5082/ttm/api/v1.0/instances/111210/time/now
+curl http://localhost:5082/ttm/api/v1.0/instances/111201/time/now
+curl http://localhost:5082/ttm/api/v1.0/instances/111202/time/now
+curl http://localhost:5082/ttm/api/v1.0/instances/111203/time/now
+curl http://localhost:5082/ttm/api/v1.0/instances/111204/time/now
+curl http://localhost:5082/ttm/api/v1.0/instances/111205/time/now
+curl http://localhost:5082/ttm/api/v1.0/instances/111206/time/now
+curl http://localhost:5082/ttm/api/v1.0/instances/111207/time/now
+curl http://localhost:5082/ttm/api/v1.0/instances/111208/time/now
+curl http://localhost:5082/ttm/api/v1.0/instances/111209/time/now
+curl http://localhost:5082/ttm/api/v1.0/instances/111210/time/now
 
 curl -i -H "Content-Type: application/json" -X POST -d '{"instance_id":"111201","instance_name":"nk111201","start_time":"2013-11-07T23:49:56.906600","end_time":"2013-11-08T23:48:19.088958"}' http://localhost:5082/ttm/api/v1.0/instances/111201/metrics
 curl -i -H "Content-Type: application/json" -X POST -d '{"instance_id":"111202","instance_name":"nk111202","start_time":"2013-11-07T23:49:56.906600","end_time":"2013-11-08T23:48:19.088958"}' http://localhost:5082/ttm/api/v1.0/instances/111202/metrics

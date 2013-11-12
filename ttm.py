@@ -28,9 +28,9 @@ def not_found(error):
 
 @app.route('/')
 def index():
-    app.logger.warning('A warning occurred (%d apples)', 42)
-    app.logger.error('An error occurred')
-    app.logger.info('Info')
+    ttm_logger.warning('A warning occurred (%d apples)', 42)
+    ttm_logger.error('An error occurred')
+    ttm_logger.info('Info')
     return "These are not the droids you are looking for."
 
 @app.route('/ttm/debug')

@@ -44,11 +44,12 @@ def utc_time(instance_id=None):
     #convert isoformat back to datetime with dateutil
     #example: dateutil.parser.parse('2013-09-26T19:38:14.399399')
     date = datetime.utcnow()
-    
+    ttm_logger.info("Entering utc_time API call")
     if ( instance_id != None and instance_id.find('\"') != -1):
         instance_id = instance_id.replace('\"','')
 
     if (instance_id):
+        ttm_logger.debug('Calling create_metric with Instance Id: %s' % instance_id)
         create_metric(instance_id, date.isoformat())
     return jsonify({"utcnow": date.isoformat()})
 
@@ -67,6 +68,7 @@ def get_instances():
 
 @app.route('/ttm/api/v1.0/incompletebuilds', methods = ['GET'])
 def get_instances_build_status():
+    ttm_logger.debug("Entering get_instance_build_status")
     _instances = r_server.lrange('ttm_instance_ids', 0, -1)
     instances = []
     instanceCount = 0
@@ -75,9 +77,11 @@ def get_instances_build_status():
     for x in _instances:
         try:
             instanceCount = instanceCount + 1
+            ttm_logger.debug('VM count is : %s', instanceCount)
             _metrics = r_server.lrange(x, 0, -1)
             for metric in _metrics:
                 ttm_start_time = r_server.hget(metric,'start_time')
+                ttm_logger.debug('ttm_start_time is : %s', ttm_start_time)
                 if(ttm_start_time):
                     str_ttm_start_time = ttm_start_time.split('.')
                     dt_ttm_start_time = datetime.strptime(str_ttm_start_time[0],"%Y-%m-%dT%H:%M:%S")
@@ -86,6 +90,7 @@ def get_instances_build_status():
                     ttm_end_time = r_server.hget(metric,'end_time')
 
                 ttm_instance_start_time =  r_server.hget(metric,'instance_start_time')
+                ttm_logger.debug('ttm_instance_start_time is : %s', ttm_instance_start_time)
                 if (ttm_instance_start_time):
                         str_ttm_instance_start_time = ttm_instance_start_time.split('.')
                         dt_ttm_instance_start_time = datetime.strptime(str_ttm_instance_start_time[0],"%Y-%m-%dT%H:%M:%S")
@@ -94,6 +99,7 @@ def get_instances_build_status():
 
                 if(((len(ttm_start_time) > 0) or (len(ttm_instance_start_time) > 0) )and (len(ttm_end_time) <= 0) ):
                     vmfailedCount = vmfailedCount + 1
+                    ttm_logger.debug('Failed VM count is : %s', vmfailedCount)
                     instances.append(
                        {
                            "instance_id": x
@@ -115,6 +121,7 @@ def is_instance(instance_id):
     from flask import json
     from flask import request
 
+    ttm_logger.info("Entering is_instance call")
 
     ttm_start_time = ""
     ttm_end_time = ""
@@ -122,23 +129,25 @@ def is_instance(instance_id):
 
     if ( instance_id != None and instance_id.find('\"') != -1):
         instance_id = instance_id.replace('\"','')
-
-    #import pdb;pdb.set_trace()
-    if ( instance_id != None and instance_id.find('\"') != -1):
-        instance_id = instance_id.replace('\"','')
+        ttm_logger.debug('Instance Id is: %s' % instance_id)
 
     _metrics = r_server.lrange(instance_id, 0, -1)
 
     for metric in _metrics:
            ttm_start_time = r_server.hget(metric,'start_time')
+           ttm_logger.debug('ttm start time is: %s' % ttm_start_time)
            ttm_end_time = r_server.hget(metric,'end_time')
+           ttm_logger.debug('ttm end time is: %s' % ttm_end_time)
            ttm_instance_start_time =  r_server.hget(metric,'instance_start_time')
+           ttm_logger.debug('ttm instance start time is: %s' % ttm_instance_start_time)
 
-    #import pdb;pdb.set_trace() 
     if len(_metrics) == 0:
         js = {"exists": False,"start_time" : ttm_start_time, "end_time" : ttm_end_time, "instance_start_time" : ttm_instance_start_time}
+        ttm_logger.debug('Instance id does not exists in metrics' )
     else:
         js = {"exists": True,"start_time" : ttm_start_time, "end_time" : ttm_end_time, "instance_start_time" : ttm_instance_start_time}
+        ttm_logger.debug('Instance id exists in metrics return true' )
+
 
     callback = request.args.get('callback', '')
     if ( callback != ''):
@@ -178,25 +187,28 @@ def get_metric(metric_id):
         abort(404)    
     return jsonify( { "metric": metric } )
 
-#@app.route('/ttm/api/v1.0/instances/<string:instance_id>/metrics', methods=['POST'])
 def create_metric(instance_id, date_in_isoformat):
+    ttm_logger.info('Entering create_metric' )
     #This is called by utc_time
     metric = {} 
-    metric_id_array = r_server.lrange(instance_id, 0, -1)
-    if (metric_id_array):
+    try:
+        metric_id_array = r_server.lrange(instance_id, 0, -1)
+        if (metric_id_array):
             metric_id = metric_id_array[0]
             metric = r_server.hgetall(metric_id)
 
-    if (metric):
-        pass
-    else:
-
-        #This is called by utc_time
-        metric_id = uuid.uuid4()
-        r_server.lpush('ttm_instance_ids', instance_id)
-        r_server.lpush('ttm_metric_ids', metric_id)
-        r_server.lpush(instance_id, metric_id)
-        metric = {
+        #if metric exists we do not want to create again
+        if (metric):
+            ttm_logger.debug('Metric already exists')
+            pass
+        else:
+            ttm_logger.debug('creating Metric')
+            #This is called by utc_time
+            metric_id = uuid.uuid4()
+            r_server.lpush('ttm_instance_ids', instance_id)
+            r_server.lpush('ttm_metric_ids', metric_id)
+            r_server.lpush(instance_id, metric_id)
+            metric = {
                 "id": metric_id,
                 "instance_id": instance_id,
                 "instance_name": "",
@@ -204,9 +216,12 @@ def create_metric(instance_id, date_in_isoformat):
                 "end_time": "",
                 "instance_start_time": date_in_isoformat,
                 "bootstrap_timeout":False
-        }
-    r_server.hmset(metric_id, metric)
-
+            }
+            ttm_logger.debug('Metric created: %s', metric)
+            ttm_logger.debug('Metric created successfully')
+        r_server.hmset(metric_id, metric)
+    except:
+        ttm_logger.error("Error occured in create metric")
 
 @app.route('/ttm/api/v1.0/instances/timeout', methods=['GET'])
 def check_timeout_vm():
@@ -253,35 +268,40 @@ def check_timeout_vm():
                         }
                     )
         except:
-            print 'Exception ocured: Possibly invalid datetime format'
+            ttm_logger.error('Exception ocured: Possibly invalid datetime format')
 
     return jsonify( { "instances": instances } )
 
 def update_metric_timeout(instance_id, instance_name,date):
-    if ( instance_id != None and instance_id.find('\"') != -1):
-        instance_id = instance_id.replace('\"','')
+    ttm_logger.info('Entering update_metric_timeout')
+    try:
+        if ( instance_id != None and instance_id.find('\"') != -1):
+            instance_id = instance_id.replace('\"','')
 
-    metric_id_array = r_server.lrange(instance_id, 0, -1)
-    if (not metric_id_array):
-        abort(404)
+        metric_id_array = r_server.lrange(instance_id, 0, -1)
+        if (not metric_id_array):
+            ttm_logger.debug("Instance Id is not present in the metric so aborting")
+            abort(404)
 
-    metric_id = metric_id_array[0]
-    metric = r_server.hgetall(metric_id)
-    metric["instance_name"] =  instance_name
-    metric["end_time"] = date.isoformat()
-    metric["bootstrap_timeout"] ="True"
+        metric_id = metric_id_array[0]
+        metric = r_server.hgetall(metric_id)
+        metric["instance_name"] =  instance_name
+        metric["end_time"] = date.isoformat()
+        metric["bootstrap_timeout"] ="True"
 
+        if (not settings.debug):
+            ttm_logger.debug( "entering ISM code")
+            event = TTM_Event(settings.mq_user,settings.mq_password,settings.mq_host,settings.mq_port, ssl_options=settings.mq_ssl_options,ssl=settings.mq_ssl)
+            ttm_logger.debug( "event worked")
+            ism_metric = {'event_type': 'compute.instance.bootstrap.end','eventType': 'Provisioning','payload': {'instance_id':metric['instance_id'] },'taskStartTime': metric['start_time'], 'taskEndTime':metric['end_time']}
+            ttm_logger.debug("sending event")
+            event.send_event(json.dumps(ism_metric))
+            ttm_logger.debug("ISM code End")
 
-    if (not settings.debug):
-        print "entering ISM code"
-        event = TTM_Event(settings.mq_user,settings.mq_password,settings.mq_host,settings.mq_port, ssl_options=settings.mq_ssl_options,ssl=settings.mq_ssl)
-        print "event worked"
-        ism_metric = {'event_type': 'compute.instance.bootstrap.end','eventType': 'Provisioning','payload': {'instance_id':metric['instance_id'] },'taskStartTime': metric['start_time'], 'taskEndTime':metric['end_time']}
-        print "sending event"
-        event.send_event(json.dumps(ism_metric))
-        print "ISM code End"
+        r_server.hmset(metric_id, metric)
+    except:
+         ttm_logger.error('Exception occured in update metric timeout' )
 
-    r_server.hmset(metric_id, metric)
     return jsonify( { 'metric': metric } ), 201
 
 @app.route('/ttm/api/v1.0/instances/<string:instance_id>/metrics', methods=['POST'])
@@ -290,36 +310,52 @@ def update_metric(instance_id):
         or not 'instance_name' in request.json
         or not 'end_time' in request.json):
         abort(404)
+    try:
+        ttm_logger.info('Entering update_metric')
+        if ( instance_id != None and instance_id.find('\"') != -1):
+            instance_id = instance_id.replace('\"','')
 
-    if ( instance_id != None and instance_id.find('\"') != -1):
-        instance_id = instance_id.replace('\"','')
+        metric_id_array = r_server.lrange(instance_id, 0, -1)
+        if (not metric_id_array):
+            ttm_logger.debug("instance id does not exists in metrics so abort")
+            abort(404)
 
-    metric_id_array = r_server.lrange(instance_id, 0, -1)
-    if (not metric_id_array):
-        abort(404)
+        metric_id = metric_id_array[0]
+        metric = r_server.hgetall(metric_id)
+        metric["instance_name"] =  request.json["instance_name"]
+        ttm_logger.debug('Instance name is : %s ', metric["instance_name"])
+        metric["end_time"] = request.json["end_time"]
+        ttm_logger.debug('End Time is : %s ', metric["end_time"])
 
-    metric_id = metric_id_array[0]
-    metric = r_server.hgetall(metric_id)
-    metric["instance_name"] =  request.json["instance_name"]
-    metric["end_time"] = request.json["end_time"]
+        if (not settings.debug):
+            ttm_logger.debug( "entering ISM code")
+            event = TTM_Event(settings.mq_user,settings.mq_password,settings.mq_host,settings.mq_port, ssl_options=settings.mq_ssl_options,ssl=settings.mq_ssl)
+            ttm_logger.debug( "event worked")
+            ism_metric = {'event_type': 'compute.instance.bootstrap.end','eventType': 'Provisioning','payload': {'instance_id':metric['instance_id'] },'taskStartTime': metric['start_time'], 'taskEndTime':metric['end_time']}
+            ttm_logger.debug("Sending event to ISM")
+            event.send_event(json.dumps(ism_metric))
+            ttm_logger.debug("ISM code End")
 
-    if (not settings.debug):
-        print "entering ISM code"
-        event = TTM_Event(settings.mq_user,settings.mq_password,settings.mq_host,settings.mq_port, ssl_options=settings.mq_ssl_options,ssl=settings.mq_ssl)
-        print "event worked" 
-        ism_metric = {'event_type': 'compute.instance.bootstrap.end','eventType': 'Provisioning','payload': {'instance_id':metric['instance_id'] },'taskStartTime': metric['start_time'], 'taskEndTime':metric['end_time']}
-        print "Sending event to ISM"
-        event.send_event(json.dumps(ism_metric))
-        print "ISM code End"
+        r_server.hmset(metric_id, metric)
+    except:
+        ttm_logger.error("Exception occured in update metric")
 
-    r_server.hmset(metric_id, metric)
     return jsonify( { 'metric': metric } ), 201
 
 if __name__ == '__main__':
 
-    handler = RotatingFileHandler('/var/log/ttm/_ttm.log', maxBytes=100000, backupCount=1)
-    handler.setLevel(logging.INFO)
-    app.logger.addHandler(handler)
+    LOG_FILENAME = '/var/log/ttm/_ttm.log'
+    ttm_logger = logging.getLogger('TTMLogger')
+    ttm_logger.setLevel(logging.DEBUG)
+
+    handler = RotatingFileHandler(LOG_FILENAME, maxBytes=100000, backupCount=1)
+
+    # create formatter
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    # add formatter to handler
+    handler.setFormatter(formatter)
+    #Add Handler to logger
+    ttm_logger.addHandler(handler)
 
     #uncomment the next 3 lines to use tornando to serve
     if (sys.argv and len(sys.argv) > 1 and sys.argv[1] == "ssl"):

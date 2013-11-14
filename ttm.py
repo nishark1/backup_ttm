@@ -288,7 +288,7 @@ def update_metric_timeout(instance_id, instance_name,date):
         metric["end_time"] = date.isoformat()
         metric["bootstrap_timeout"] ="True"
 
-        if (not settings.debug):
+        if (hasattr(settings,"debug") not settings.debug):
             ttm_logger.debug( "entering ISM code")
             event = TTM_Event(settings.mq_user,settings.mq_password,settings.mq_host,settings.mq_port, ssl_options=settings.mq_ssl_options,ssl=settings.mq_ssl)
             ttm_logger.debug( "event worked")
@@ -375,8 +375,8 @@ if __name__ == '__main__':
 
     else:
        http_server = HTTPServer(WSGIContainer(app))
-       http_server.listen(5083, address=settings.listen_ip)
-       http_server.listen(5083, "localhost")
+       http_server.listen(5082, address=settings.listen_ip)
+       http_server.listen(5082, "localhost")
        IOLoop.instance().start()
 
     #uncomment the next 3 lines to use tornando to serve 

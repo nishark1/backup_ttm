@@ -266,8 +266,8 @@ def check_timeout_vm():
                         }
                     )
         except:
-            ttm_logger.exception('Exception ocured: Possibly invalid datetime format')
-            raise
+            ttm_logger.debug('Exception ocured: Possibly invalid datetime format')
+            
 
     return jsonify( { "instances": instances } )
 

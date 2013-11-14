@@ -28,9 +28,6 @@ def not_found(error):
 
 @app.route('/')
 def index():
-    ttm_logger.warning('A warning occurred (%d apples)', 42)
-    ttm_logger.error('An error occurred')
-    ttm_logger.info('Info')
     return "These are not the droids you are looking for."
 
 @app.route('/ttm/debug')
@@ -109,8 +106,8 @@ def get_instances_build_status():
                            ,"postbuild_time":postbuild_time.__str__()
                        }
                     )
-        except:
-            print 'Exception ocured: Possibly invalid datetime format'
+        except Exception as e:
+            ttm_logger.error(e)
 
     return jsonify( { "instances": instances , "Total_Instances":instanceCount ,"VMinPostBuildState":vmfailedCount, "CurrentTime":date.isoformat() } )
 
@@ -221,7 +218,8 @@ def create_metric(instance_id, date_in_isoformat):
             ttm_logger.debug('Metric created successfully')
         r_server.hmset(metric_id, metric)
     except:
-        ttm_logger.error("Error occured in create metric")
+        ttm_logger.exception("Error occured in create metric")
+        raise
 
 @app.route('/ttm/api/v1.0/instances/timeout', methods=['GET'])
 def check_timeout_vm():
@@ -268,7 +266,8 @@ def check_timeout_vm():
                         }
                     )
         except:
-            ttm_logger.error('Exception ocured: Possibly invalid datetime format')
+            ttm_logger.exception('Exception ocured: Possibly invalid datetime format')
+            raise
 
     return jsonify( { "instances": instances } )
 
@@ -299,8 +298,9 @@ def update_metric_timeout(instance_id, instance_name,date):
             ttm_logger.debug("ISM code End")
 
         r_server.hmset(metric_id, metric)
-    except:
-         ttm_logger.error('Exception occured in update metric timeout' )
+    except Exception as e:
+        ttm_logger.exception('Exception occured in update metric timeout' )
+        raise
 
     return jsonify( { 'metric': metric } ), 201
 
@@ -327,7 +327,7 @@ def update_metric(instance_id):
         metric["end_time"] = request.json["end_time"]
         ttm_logger.debug('End Time is : %s ', metric["end_time"])
 
-        if (not settings.debug):
+        if (hasattr(settings, "debug") and not settings.debug):
             ttm_logger.debug( "entering ISM code")
             event = TTM_Event(settings.mq_user,settings.mq_password,settings.mq_host,settings.mq_port, ssl_options=settings.mq_ssl_options,ssl=settings.mq_ssl)
             ttm_logger.debug( "event worked")
@@ -337,8 +337,9 @@ def update_metric(instance_id):
             ttm_logger.debug("ISM code End")
 
         r_server.hmset(metric_id, metric)
-    except:
-        ttm_logger.error("Exception occured in update metric")
+    except Exception as e:
+        ttm_logger.exception("Exception occured in update metric")
+        raise
 
     return jsonify( { 'metric': metric } ), 201
 
@@ -374,7 +375,8 @@ if __name__ == '__main__':
 
     else:
        http_server = HTTPServer(WSGIContainer(app))
-       http_server.listen(5082, address=settings.listen_ip)
+       http_server.listen(5083, address=settings.listen_ip)
+       http_server.listen(5083, "localhost")
        IOLoop.instance().start()
 
     #uncomment the next 3 lines to use tornando to serve 

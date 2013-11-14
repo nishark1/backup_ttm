@@ -347,7 +347,7 @@ if __name__ == '__main__':
 
     LOG_FILENAME = '/var/log/ttm/_ttm.log'
     ttm_logger = logging.getLogger('TTMLogger')
-    ttm_logger.setLevel(logging.DEBUG)
+    ttm_logger.setLevel(logging.ERROR)
 
     handler = RotatingFileHandler(LOG_FILENAME, maxBytes=100000, backupCount=1)
 

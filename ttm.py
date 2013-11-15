@@ -239,7 +239,7 @@ def check_timeout_vm():
                     dt_ttm_start_time = datetime.strptime(str_ttm_start_time[0],"%Y-%m-%dT%H:%M:%S")
                     postbuild_time = datetime.utcnow() - dt_ttm_start_time
                     hours = (postbuild_time.days*24)-(postbuild_time.seconds/3600)
-                    print '{} hours'.format(hours)
+                    #print '{} hours'.format(hours)
 
                 ttm_instance_start_time =  r_server.hget(metric,'instance_start_time')
                 if (ttm_instance_start_time):
@@ -247,7 +247,7 @@ def check_timeout_vm():
                     dt_ttm_instance_start_time = datetime.strptime(str_ttm_instance_start_time[0],"%Y-%m-%dT%H:%M:%S")
                     build_time = datetime.utcnow() - dt_ttm_instance_start_time
                     bhours = (build_time.days*24)-(build_time.seconds/3600)
-                    print '{} hours'.format(hours)
+                    #print '{} hours'.format(hours)
 
                 ttm_end_time = r_server.hget(metric,'end_time')
                 date = datetime.utcnow()
@@ -347,9 +347,9 @@ if __name__ == '__main__':
 
     LOG_FILENAME = '/var/log/ttm/_ttm.log'
     ttm_logger = logging.getLogger('TTMLogger')
-    ttm_logger.setLevel(logging.ERROR)
+    ttm_logger.setLevel(logging.DEBUG)
 
-    handler = RotatingFileHandler(LOG_FILENAME, maxBytes=100000, backupCount=1)
+    handler = RotatingFileHandler(LOG_FILENAME, maxBytes=1000000, backupCount=4)
 
     # create formatter
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")

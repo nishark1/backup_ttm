@@ -357,7 +357,7 @@ if __name__ == '__main__':
     ttm_logger = logging.getLogger('TTMLogger')
     ttm_logger.setLevel(logging.DEBUG)
 
-    handler = RotatingFileHandler(LOG_FILENAME, maxBytes=1000000, backupCount=4)
+    handler = RotatingFileHandler(LOG_FILENAME, maxBytes=100000000, backupCount=4)
 
     # create formatter
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")

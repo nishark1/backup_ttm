@@ -289,15 +289,19 @@ def update_metric_timeout(instance_id, instance_name,date):
         metric["bootstrap_timeout"] ="True"
 
         if (hasattr(settings,"debug") and not settings.debug):
+            ttm_logger.debug("we are in debug but would normally talk to ISM here")
+        else:
             ttm_logger.debug( "entering ISM code")
             event = TTM_Event(settings.mq_user,settings.mq_password,settings.mq_host,settings.mq_port, ssl_options=settings.mq_ssl_options,ssl=settings.mq_ssl)
             ttm_logger.debug( "event worked")
             ism_metric = {'event_type': 'compute.instance.bootstrap.end','eventType': 'Provisioning','payload': {'instance_id':metric['instance_id'] },'taskStartTime': metric['start_time'], 'taskEndTime':metric['end_time']}
             ttm_logger.debug("sending event")
+            ttm_logger.debug(ism_metric)
             event.send_event(json.dumps(ism_metric))
             ttm_logger.debug("ISM code End")
 
         r_server.hmset(metric_id, metric)
+
     except Exception as e:
         ttm_logger.exception('Exception occured in update metric timeout' )
         raise
@@ -328,15 +332,19 @@ def update_metric(instance_id):
         ttm_logger.debug('End Time is : %s ', metric["end_time"])
 
         if (hasattr(settings, "debug") and not settings.debug):
+            ttm_logger.debug("we are in debug but would normally talk to ISM here")
+        else:
             ttm_logger.debug( "entering ISM code")
             event = TTM_Event(settings.mq_user,settings.mq_password,settings.mq_host,settings.mq_port, ssl_options=settings.mq_ssl_options,ssl=settings.mq_ssl)
             ttm_logger.debug( "event worked")
             ism_metric = {'event_type': 'compute.instance.bootstrap.end','eventType': 'Provisioning','payload': {'instance_id':metric['instance_id'] },'taskStartTime': metric['start_time'], 'taskEndTime':metric['end_time']}
             ttm_logger.debug("Sending event to ISM")
+            ttm_logger.debug(ism_metric)
             event.send_event(json.dumps(ism_metric))
             ttm_logger.debug("ISM code End")
 
         r_server.hmset(metric_id, metric)
+
     except Exception as e:
         ttm_logger.exception("Exception occured in update metric")
         raise

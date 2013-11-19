@@ -237,16 +237,26 @@ def check_timeout_vm():
                 if(ttm_start_time):
                     str_ttm_start_time = ttm_start_time.split('.')
                     dt_ttm_start_time = datetime.strptime(str_ttm_start_time[0],"%Y-%m-%dT%H:%M:%S")
+                    ttm_logger.debug("Capturing end time for reference before calculating postbuild_time")
+                    ttm_logger.debug(datetime.utcnow())
+                    ttm_logger.debug("Calculating PostBuild time : ")
                     postbuild_time = datetime.utcnow() - dt_ttm_start_time
-                    hours = (postbuild_time.days*24)-(postbuild_time.seconds/3600)
+                    ttm_logger.debug(postbuild_time)
+                    hours = postbuild_time.total_seconds() / 3600
+                    ttm_logger.debug(hours)
                     #print '{} hours'.format(hours)
 
                 ttm_instance_start_time =  r_server.hget(metric,'instance_start_time')
                 if (ttm_instance_start_time):
                     str_ttm_instance_start_time = ttm_instance_start_time.split('.')
                     dt_ttm_instance_start_time = datetime.strptime(str_ttm_instance_start_time[0],"%Y-%m-%dT%H:%M:%S")
+                    ttm_logger.debug("Capturing end time for reference before calculating build_time")
+                    ttm_logger.debug(datetime.utcnow())
+                    ttm_logger.debug("Calculating Build time : ")
                     build_time = datetime.utcnow() - dt_ttm_instance_start_time
-                    bhours = (build_time.days*24)-(build_time.seconds/3600)
+                    ttm_logger.debug(build_time)
+                    bhours = build_time.total_seconds() / 3600
+                    ttm_logger.debug(bhours)
                     #print '{} hours'.format(hours)
 
                 ttm_end_time = r_server.hget(metric,'end_time')
@@ -267,7 +277,6 @@ def check_timeout_vm():
                     )
         except:
             ttm_logger.debug('Exception ocured: Possibly invalid datetime format')
-            
 
     return jsonify( { "instances": instances, "current_time": date.isoformat() } )
 

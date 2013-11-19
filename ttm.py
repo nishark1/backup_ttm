@@ -269,7 +269,7 @@ def check_timeout_vm():
             ttm_logger.debug('Exception ocured: Possibly invalid datetime format')
             
 
-    return jsonify( { "instances": instances } )
+    return jsonify( { "instances": instances, "current_time": date.isoformat() } )
 
 def update_metric_timeout(instance_id, instance_name,date):
     ttm_logger.info('Entering update_metric_timeout')

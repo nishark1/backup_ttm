@@ -45,8 +45,5 @@ Sequence Diagram
  
  ![alt text](https://github.intel.com/jrcookli/ttm/raw/master/etc/ttm_seq.jpg "Sequence Diagram for TTM")
 
- 
-TTM Bootstrap timeout sequence Diagram
-======================================
 
  ![alt text](https://github.intel.com/jrcookli/ttm/raw/master/etc/ttm-timeout.jpg "Sequence Diagram for TTM - Bootstrap Timeout ")

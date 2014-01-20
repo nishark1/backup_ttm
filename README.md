@@ -8,7 +8,7 @@ Steps to Run the Service
   - pip install -r requirements.txt
   - sudo apt-get install redis-server
 
-APIs:
+Primary APIs:
 
   -Get Instance Metrics:
      -/ttm/api/v1.0/instances/<string:instance_id>/metrics
@@ -30,15 +30,27 @@ APIs:
   -List instances: 
     -/ttm/api/v1.0/instances
 
-  -Get instance
-    - /ttm/api/v1.0/instances/<string:instance_id>
-
   -Get time (UTC ISO Format)
-      /ttm/api/v1.0/time/now
+    - /ttm/api/v1.0/time/now
 
-  -Get incompletebuilds
-     /ttm/api/v1.0/incompletebuilds
+  -Check instance exists in TTM
+    -  /ttm/api/v1.0/instances/<string:instance_id>
+  
+  -Get instances running in postbuild
+    - /ttm/api/v1.0/incompletebuilds
 
+
+Monitoring for TTM: 
+-------------------
+
+TTM exists on same node as Horizon.
+Horizon servers: az1infauto01.amr.corp.intel.com,
+                 az1infauto02.amr.corp.intel.com
+
+Monitoring Enabled for TTM to check
+ - TTM service is running
+ - TTM endpoint is accessible: API call is used to make sure we are able to get
+   back data from TTM 
 
 Sequence Diagram
 ================

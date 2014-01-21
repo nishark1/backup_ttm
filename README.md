@@ -39,7 +39,13 @@ Primary APIs:
   -Get instances running in postbuild
     - /ttm/api/v1.0/incompletebuilds
 
-
+  -To Post recipe Information
+    - First time you can call when recipe starts to capture recipe start
+      time. You can send any string as message like error info that you
+      want to store
+        --curl -X POST -d msg=<string:start_message> http://localhost:5082/ttm/api/v1.0/instances/<string:instance_id>/recipe/<string:recipe_name> 
+    - Second time you can call the above to send the recipe end time
+        --curl -X POST -d msg=<string:end_message> http://localhost:5082/ttm/api/v1.0/instances/<string:instance_id>/recipe
 Monitoring for TTM: 
 -------------------
 
@@ -51,6 +57,8 @@ Monitoring Enabled for TTM to check
  - TTM service is running
  - TTM endpoint is accessible: API call is used to make sure we are able to get
    back data from TTM 
+
+
 
 Sequence Diagram
 ================

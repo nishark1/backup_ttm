@@ -114,9 +114,9 @@ def get_instances_build_status():
 
 @app.route('/ttm/api/v1.0/instances/<string:instance_id>', methods=['GET'])
 def is_instance(instance_id):
-    from flask import Response
-    from flask import json
-    from flask import request
+    #from flask import Response
+    #from flask import json
+    #from flask import request
 
     ttm_logger.info("Entering is_instance call")
 

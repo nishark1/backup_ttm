@@ -4,7 +4,7 @@ from ttm_event import TTM_Event
 import pika
 from flask import Flask, jsonify, abort, make_response, request, url_for
 from flask import render_template
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 import redis
 import sys
@@ -215,7 +215,8 @@ def create_metric(instance_id, date_in_isoformat):
                 "bootstrap_start_time": "",
                 "end_time": "",
                 "instance_start_time": date_in_isoformat,
-                "bootstrap_timeout":False
+                "bootstrap_timeout":False,
+                "mute":False
             }
             ttm_logger.debug('Metric created: %s', metric)
             ttm_logger.debug('Metric created successfully')
@@ -410,6 +411,65 @@ def update_recipe(instance_id, recipe_name):
         ttm_logger.exception("Exception occured in update_recipe")
 
     return jsonify( { 'metric': metric } ), 201
+
+@app.route('/ttm/api/v1.0/instances/<string:instance_id>/setmute', methods=['POST'])
+def set_mute(instance_id):
+    #get the instance from the redis db
+    metric = {}
+    try:
+        if ( instance_id != None and instance_id.find('\"') != -1):
+            instance_id = instance_id.replace('\"','')
+            
+        metric_id_array = r_server.lrange(instance_id, 0, -1)
+        if (not metric_id_array):
+            ttm_logger.debug("set_mute: instance id does not exists in metrics so abort")
+            abort(404)
+        else:
+            metric_id = metric_id_array[0]
+            metric = r_server.hgetall(metric_id)
+            metric["mute"] = True
+
+    except Exception as e:
+        ttm_logger.exception("Exception occured in set_mute")
+
+    return jsonify( { 'metric': metric } ), 201
+
+
+@app.route('/ttm/api/v1.0/instances/nobootstrapstart/duration/<int:duration>', methods=['POST'])
+def nobootstrapstart(duration):
+    _instances = r_server.lrange('ttm_instance_ids', 0, -1)
+    instances = []
+    
+    #import ipdb;ipdb.set_trace()
+    for x in _instances:
+        try:
+            current_time = datetime.utcnow()
+            required_time = current_time - timedelta(minutes=duration)
+            _metrics = r_server.lrange(x, 0, -1)
+            for metric in _metrics:
+                ttm_instance_start_time = r_server.hget(metric,'instance_start_time')
+                ttm_mute_flag = r_server.hget(metric,'mute')
+                ttm_bootstrap_start_time = r_server.hget(metric,'bootstrap_start_time')
+                instance_name = r_server.hget(metric,'instance_name')
+                if (ttm_instance_start_time):
+                    str_ttm_instance_start_time = ttm_instance_start_time.split('.')
+                    dt_ttm_instance_start_time = datetime.strptime(str_ttm_instance_start_time[0],"%Y-%m-%dT%H:%M:%S")
+                    if((dt_ttm_instance_start_time >= required_time) and 
+                            (ttm_mute_flag == 'False') and (ttm_bootstrap_start_time == "")):
+                        instances.append(
+                                {
+                                    "instance_id": x
+                                    ,"instance_name":instance_name
+                                    ,"instance_start_time":ttm_instance_start_time
+                                    ,"bootstrap_start_time":ttm_bootstrap_start_time
+                                    ,"instance_ismute":ttm_mute_flag
+                                    ,"current_time":current_time.isoformat()
+                                }
+                            )
+        except Exception as e:
+            ttm_logger.exception("Exception occured in nobootstrapstart")
+
+    return jsonify( { "instances": instances } )
 
 
 if __name__ == '__main__':

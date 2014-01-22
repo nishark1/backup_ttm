@@ -366,13 +366,15 @@ def update_metric(instance_id):
 
 @app.route('/ttm/api/v1.0/instances/<string:instance_id>/recipe/<string:recipe_name>', methods=['POST'])
 def update_recipe(instance_id, recipe_name):
-    ttm_logger.info('Entering update_recipe' )
+    ttm_logger.debug('Entering update_recipe' )
     #This is called by utc_time
     metric = {} 
     try:
         if ( instance_id != None and instance_id.find('\"') != -1):
             instance_id = instance_id.replace('\"','')
         
+        ttm_logger.debug('Instance Id: %s' % instance_id)
+        ttm_logger.debug('recipe received: %s' % recipe_name)
         date = datetime.utcnow()
         metric_id_array = r_server.lrange(instance_id, 0, -1)
         if (metric_id_array):
@@ -386,12 +388,16 @@ def update_recipe(instance_id, recipe_name):
             if(len(metric["recipes"]) > 0):
                 import ast
                 dict_recipes = ast.literal_eval(metric["recipes"])
+                ttm_logger.debug("recipes exists in TTM")
+                ttm_logger.debug("printing recipes dictionary: {0}".format(dict_recipes))
 
                 if(dict_recipes.has_key(recipe_name)):
+                    ttm_logger.debug("recipe {0} exists in recipes so updating endtime".format(recipe_name))
                     dict_recipes[recipe_name]["recipe_end_time"] = date.isoformat()
                     if (request.form.has_key("msg")):
                         dict_recipes[recipe_name]["end_msg"] = request.form["msg"]
                 else:
+                    ttm_logger.debug("Recipe {0} does not exists. Adding recipe".format(recipe_name))
                     dict_recipes[recipe_name] = {}
                     dict_recipes[recipe_name]["recipe_start_time"] = date.isoformat()
                     if (request.form.has_key("msg")):
@@ -399,12 +405,14 @@ def update_recipe(instance_id, recipe_name):
 
                 metric["recipes"] = dict_recipes
             else:
+                ttm_logger.debug("No recipes exists. Adding recipes")
                 metric["recipes"][recipe_name] = {}
                 metric["recipes"][recipe_name]["recipe_start_time"] = date.isoformat()
                 if (request.form.has_key("msg")):
                     metric["recipes"][recipe_name]["start_msg"] = request.form["msg"]
 
             r_server.hmset(metric_id, metric)
+            ttm_logger.debug("update_recipe ends")
         else:
             ttm_logger.debug("a recipe {0} was provided but we don't have a a metric for instance_id {1}".format(recipe_name, instance_id))
     except Exception as e:
@@ -415,11 +423,13 @@ def update_recipe(instance_id, recipe_name):
 @app.route('/ttm/api/v1.0/instances/<string:instance_id>/setmute', methods=['POST'])
 def set_mute(instance_id):
     #get the instance from the redis db
+    ttm_logger.debug("Entering set_mute")
     metric = {}
     try:
         if ( instance_id != None and instance_id.find('\"') != -1):
             instance_id = instance_id.replace('\"','')
-            
+
+        ttm_logger.debug('Instance Id: %s' % instance_id)
         metric_id_array = r_server.lrange(instance_id, 0, -1)
         if (not metric_id_array):
             ttm_logger.debug("set_mute: instance id does not exists in metrics so abort")
@@ -427,7 +437,10 @@ def set_mute(instance_id):
         else:
             metric_id = metric_id_array[0]
             metric = r_server.hgetall(metric_id)
+            ttm_logger.debug("Metric exists for {0}".format(instance_id))
             metric["mute"] = True
+            ttm_logger.debug("Metric after updating mute flag to True is".format(metric))
+            ttm_logger.debug("set_mute ends")
 
     except Exception as e:
         ttm_logger.exception("Exception occured in set_mute")
@@ -437,24 +450,33 @@ def set_mute(instance_id):
 
 @app.route('/ttm/api/v1.0/instances/nobootstrapstart/duration/<int:duration>', methods=['POST'])
 def nobootstrapstart(duration):
+    ttm_logger.debug("Entering nobootstrapstart")
     _instances = r_server.lrange('ttm_instance_ids', 0, -1)
     instances = []
-    
-    #import ipdb;ipdb.set_trace()
+    ttm_logger.debug("Going over all instances")
+
     for x in _instances:
         try:
+            ttm_logger.debug("current instance id is {0}".format(x))
             current_time = datetime.utcnow()
+            ttm_logger.debug("current_time is {0}".format(current_time))
             required_time = current_time - timedelta(minutes=duration)
+            ttm_logger.debug("required_time is {0}".format(required_time))
             _metrics = r_server.lrange(x, 0, -1)
             for metric in _metrics:
                 ttm_instance_start_time = r_server.hget(metric,'instance_start_time')
+                ttm_logger.debug("instance_start_time is {0}".format(ttm_instance_start_time))
                 ttm_mute_flag = r_server.hget(metric,'mute')
+                ttm_logger.debug("mute flag for the instance is {0}".format(ttm_mute_flag))
                 ttm_bootstrap_start_time = r_server.hget(metric,'bootstrap_start_time')
+                ttm_logger.debug("bootstrap_start_time is {0}".format(ttm_bootstrap_start_time))
                 instance_name = r_server.hget(metric,'instance_name')
+                ttm_logger.debug("instance name is {0}".format(instance_name))
                 if (ttm_instance_start_time):
                     str_ttm_instance_start_time = ttm_instance_start_time.split('.')
                     dt_ttm_instance_start_time = datetime.strptime(str_ttm_instance_start_time[0],"%Y-%m-%dT%H:%M:%S")
-                    if((dt_ttm_instance_start_time >= required_time) and 
+                    ttm_logger.debug("dt_ttm_instance_start_time is {0}".format(dt_ttm_instance_start_time))
+                    if((dt_ttm_instance_start_time >= required_time) and
                             (ttm_mute_flag == 'False') and (ttm_bootstrap_start_time == "")):
                         instances.append(
                                 {
@@ -469,6 +491,56 @@ def nobootstrapstart(duration):
         except Exception as e:
             ttm_logger.exception("Exception occured in nobootstrapstart")
 
+    ttm_logger.debug("End of nobootstrapstart")
+    return jsonify( { "instances": instances } )
+
+
+@app.route('/ttm/api/v1.0/instances/nobootstrapend/duration/<int:duration>', methods=['POST'])
+def nobootstrapend(duration):
+    ttm_logger.debug("Entering nobootstrapend")
+    _instances = r_server.lrange('ttm_instance_ids', 0, -1)
+    instances = []
+
+    for x in _instances:
+        try:
+            ttm_logger.debug("current instance id is {0}".format(x))
+            current_time = datetime.utcnow()
+            ttm_logger.debug("current_time is {0}".format(current_time))
+            required_time = current_time - timedelta(minutes=duration)
+            _metrics = r_server.lrange(x, 0, -1)
+            for metric in _metrics:
+                ttm_instance_start_time = r_server.hget(metric,'instance_start_time')
+                ttm_logger.debug("instance_start_time is {0}".format(ttm_instance_start_time))
+                ttm_mute_flag = r_server.hget(metric,'mute')
+                ttm_logger.debug("mute flag for the instance is {0}".format(ttm_mute_flag))
+                ttm_bootstrap_start_time = r_server.hget(metric,'bootstrap_start_time')
+                ttm_logger.debug("bootstrap_start_time is {0}".format(ttm_bootstrap_start_time))
+                ttm_bootstrap_end_time = r_server.hget(metric,'end_time')
+                ttm_logger.debug("bootstrap_end_time is {0}".format(ttm_bootstrap_end_time))
+                instance_name = r_server.hget(metric,'instance_name')
+                ttm_logger.debug("instance name is {0}".format(instance_name))
+                if (ttm_instance_start_time):
+                    str_ttm_instance_start_time = ttm_instance_start_time.split('.')
+                    dt_ttm_instance_start_time = datetime.strptime(str_ttm_instance_start_time[0],"%Y-%m-%dT%H:%M:%S")
+                    ttm_logger.debug("dt_ttm_instance_start_time is {0}".format(dt_ttm_instance_start_time))
+                    if((dt_ttm_instance_start_time >= required_time) and 
+                            (ttm_mute_flag == 'False') and (ttm_bootstrap_end_time == "") and
+                                   (ttm_bootstrap_start_time != "")):
+                        instances.append(
+                                {
+                                    "instance_id": x
+                                    ,"instance_name":instance_name
+                                    ,"instance_start_time":ttm_instance_start_time
+                                    ,"bootstrap_start_time":ttm_bootstrap_start_time
+                                    ,"bootstrap_end_time":ttm_bootstrap_end_time
+                                    ,"instance_ismute":ttm_mute_flag
+                                    ,"current_time":current_time.isoformat()
+                                }
+                            )
+        except Exception as e:
+            ttm_logger.exception("Exception occured in nobootstrapend")
+
+    ttm_logger.debug("End of nobootstrapend")
     return jsonify( { "instances": instances } )
 
 

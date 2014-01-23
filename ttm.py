@@ -441,6 +441,7 @@ def set_mute(instance_id):
             metric["mute"] = True
             ttm_logger.debug("Metric after updating mute flag to True is".format(metric))
             ttm_logger.debug("set_mute ends")
+            r_server.hmset(metric_id, metric)
 
     except Exception as e:
         ttm_logger.exception("Exception occured in set_mute")

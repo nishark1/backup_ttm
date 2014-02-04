@@ -449,7 +449,7 @@ def set_mute(instance_id):
     return jsonify( { 'metric': metric } ), 201
 
 
-@app.route('/ttm/api/v1.0/instances/nobootstrapstart/duration/<int:duration>', methods=['POST'])
+@app.route('/ttm/api/v1.0/instances/nobootstrapstart/duration/<int:duration>', methods=['GET','POST'])
 def nobootstrapstart(duration):
     ttm_logger.debug("Entering nobootstrapstart")
     _instances = r_server.lrange('ttm_instance_ids', 0, -1)
@@ -496,7 +496,7 @@ def nobootstrapstart(duration):
     return jsonify( { "instances": instances } )
 
 
-@app.route('/ttm/api/v1.0/instances/nobootstrapend/duration/<int:duration>', methods=['POST'])
+@app.route('/ttm/api/v1.0/instances/nobootstrapend/duration/<int:duration>', methods=['GET', 'POST'])
 def nobootstrapend(duration):
     ttm_logger.debug("Entering nobootstrapend")
     _instances = r_server.lrange('ttm_instance_ids', 0, -1)

@@ -167,6 +167,18 @@ def get_instance_metrics(instance_id):
         )
     return jsonify( { "metrics": metrics } )
 
+@app.route('/ttm/api/v1.0/instances/<string:instance_id>/getmetrics', methods=['GET'])
+def get_metrics_for_instance(instance_id):
+     _metrics = r_server.lrange(instance_id, 0, -1)
+     metrics = []
+     for metric_id in _metrics:
+         metric = r_server.hgetall(metric_id)
+         if len(metric) == 0:
+            abort(404)
+
+     return jsonify( { "metric": metric } )
+
+
 @app.route('/ttm/api/v1.0/metrics', methods = ['GET'])
 def get_metrics():
     metric_ids = r_server.lrange('ttm_metric_ids', 0, -1)

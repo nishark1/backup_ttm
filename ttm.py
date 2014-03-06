@@ -100,10 +100,10 @@ def get_instances_build_status():
                     instances.append(
                        {
                            "instance_id": x
-                           ,"build_start_time":ttm_instance_start_time.__str__()
-                           ,"postbuild_start_time":ttm_start_time.__str__()
-                           ,"build_time":build_time.__str__()
-                           ,"postbuild_time":postbuild_time.__str__()
+                           ,"instance_start_time":ttm_instance_start_time.__str__()
+                           #,"postbuild_start_time":ttm_start_time.__str__()
+                           #,"build_time":build_time.__str__()
+                           #,"postbuild_time":postbuild_time.__str__()
                        }
                     )
         except Exception as e:

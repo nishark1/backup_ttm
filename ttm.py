@@ -101,9 +101,6 @@ def get_instances_build_status():
                        {
                            "instance_id": x
                            ,"instance_start_time":ttm_instance_start_time.__str__()
-                           #,"postbuild_start_time":ttm_start_time.__str__()
-                           #,"build_time":build_time.__str__()
-                           #,"postbuild_time":postbuild_time.__str__()
                        }
                     )
         except Exception as e:
@@ -554,6 +551,44 @@ def nobootstrapend(duration):
             ttm_logger.exception("Exception occured in nobootstrapend")
 
     ttm_logger.debug("End of nobootstrapend")
+    return jsonify( { "instances": instances } )
+
+@app.route('/ttm/api/v1.0/instances/starttime/<string:starttime>', methods=['GET'])
+def get_instances_starttime(starttime):
+    """ This method will return all instances that were instanciated for the given start_time """
+    ttm_logger.debug("Entering get_instances_starttime")
+    _instances = r_server.lrange('ttm_instance_ids', 0, -1)
+    instances = []
+    for x in _instances:
+             try:
+                 ttm_logger.debug("current instance id is {0}".format(x))
+                 current_time = datetime.utcnow()
+                 ttm_logger.debug("current_time is {0}".format(current_time))
+                 _metrics = r_server.lrange(x, 0, -1)
+                 for metric in _metrics:
+                        ttm_instance_start_time = r_server.hget(metric,'instance_start_time')
+                        instance_name = r_server.hget(metric,'instance_name')
+                        ttm_mute_flag = r_server.hget(metric,'mute')
+                        ttm_bootstrap_start_time = r_server.hget(metric,'bootstrap_start_time')
+                        ttm_bootstrap_end_time = r_server.hget(metric,'end_time')
+                        ttm_logger.debug("bootstrap_end_time is {0}".format(ttm_bootstrap_end_time))
+                        if ttm_instance_start_time.startswith(starttime):
+                            ttm_logger.debug("instance_start_time is {0}".format(ttm_instance_start_time))
+                            instances.append(
+                                {
+                                    "instance_id":x
+                                    ,"instance_name":instance_name
+                                    ,"instance_start_time":ttm_instance_start_time
+                                    ,"bootstrap_start_time":ttm_bootstrap_start_time
+                                    ,"bootstrap_end_time":ttm_bootstrap_end_time
+                                    ,"instance_ismute":ttm_mute_flag
+
+                                }
+                            )
+             except Exception as e:
+                  ttm_logger.exception("Exception occured in get_instances_starttime")
+
+    ttm_logger.debug("End of get_instances_starttime")
     return jsonify( { "instances": instances } )
 
 
